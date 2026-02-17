@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -100,7 +101,7 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
       if (verificationStatus != 'verified') {
         if (mounted) {
           AppDialogs.showSnackBar(
-              context, 'Complete verification to post loads');
+              context, AppLocalizations.of(context)!.completeVerification);
           context.go('/supplier-verification');
         }
         return;
@@ -133,7 +134,7 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
       ref.invalidate(supplierRecentLoadsProvider);
 
       if (mounted) {
-        AppDialogs.showSuccessSnackBar(context, 'Load posted successfully!');
+        AppDialogs.showSuccessSnackBar(context, AppLocalizations.of(context)!.loadPostedSuccess);
         context.go('/my-loads');
       }
     } catch (e) {
@@ -147,10 +148,11 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Post New Load')),
+      appBar: AppBar(title: Text(l10n.postLoad)),
       body: Form(
         key: _formKey,
         child: Stepper(
@@ -178,20 +180,20 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
                   Expanded(
                     child: isLast
                         ? GradientButton(
-                            text: 'Post Load',
+                            text: l10n.postLoadButton,
                             isLoading: _isLoading,
                             onPressed: _isLoading ? null : details.onStepContinue,
                           )
                         : ElevatedButton(
                             onPressed: details.onStepContinue,
-                            child: const Text('Continue'),
+                            child: Text(l10n.continueAction),
                           ),
                   ),
                   const SizedBox(width: 12),
                   if (_currentStep > 0)
                     TextButton(
                       onPressed: details.onStepCancel,
-                      child: const Text('Back'),
+                      child: Text(l10n.back),
                     ),
                 ],
               ),
@@ -200,7 +202,7 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
           steps: [
             // Step 1: Route & Goods
             Step(
-              title: const Text('Route & Goods'),
+              title: Text(l10n.routeDetails),
               isActive: _currentStep >= 0,
               state:
                   _currentStep > 0 ? StepState.complete : StepState.indexed,
@@ -208,38 +210,38 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
                 children: [
                   CityAutocompleteField(
                     controller: _originCityController,
-                    labelText: 'From City',
+                    labelText: l10n.originCity,
                     prefixIcon: Icons.location_on_outlined,
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _originStateController,
-                    decoration: const InputDecoration(
-                      labelText: 'From State',
+                    decoration: InputDecoration(
+                      labelText: l10n.from,
                     ),
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 12),
                   CityAutocompleteField(
                     controller: _destCityController,
-                    labelText: 'To City',
+                    labelText: l10n.destinationCity,
                     prefixIcon: Icons.flag_outlined,
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _destStateController,
-                    decoration: const InputDecoration(
-                      labelText: 'To State',
+                    decoration: InputDecoration(
+                      labelText: l10n.to,
                     ),
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     value: _material,
-                    decoration: const InputDecoration(
-                      labelText: 'Material',
+                    decoration: InputDecoration(
+                      labelText: l10n.material,
                     ),
                     items: _materials
                         .map((m) =>
@@ -250,9 +252,9 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _weightController,
-                    decoration: const InputDecoration(
-                      labelText: 'Weight (Tonnes)',
-                      suffixText: 'tonnes',
+                    decoration: InputDecoration(
+                      labelText: l10n.weight,
+                      suffixText: l10n.tonnes,
                     ),
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.next,
@@ -263,14 +265,14 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
 
             // Step 2: Truck Requirements
             Step(
-              title: const Text('Truck Requirements'),
+              title: Text(l10n.truckType),
               isActive: _currentStep >= 1,
               state:
                   _currentStep > 1 ? StepState.complete : StepState.indexed,
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Truck Type', style: AppTypography.bodyMedium),
+                  Text(l10n.truckType, style: AppTypography.bodyMedium),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -290,7 +292,7 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
                     }).toList(),
                   ),
                   const SizedBox(height: 16),
-                  Text('Number of Tyres', style: AppTypography.bodyMedium),
+                  Text(l10n.tyres, style: AppTypography.bodyMedium),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -322,7 +324,7 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
 
             // Step 3: Pricing
             Step(
-              title: const Text('Pricing'),
+              title: Text(l10n.expectedPrice),
               isActive: _currentStep >= 2,
               state:
                   _currentStep > 2 ? StepState.complete : StepState.indexed,
@@ -331,10 +333,10 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
                 children: [
                   TextFormField(
                     controller: _priceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Price',
+                    decoration: InputDecoration(
+                      labelText: l10n.price,
                       prefixText: '₹ ',
-                      suffixText: '/ton',
+                      suffixText: '/${l10n.tonnes}',
                     ),
                     keyboardType: TextInputType.number,
                   ),
@@ -343,7 +345,7 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
                     children: [
                       Expanded(
                         child: RadioListTile<String>(
-                          title: const Text('Negotiable'),
+                          title: Text(l10n.negotiable),
                           value: 'negotiable',
                           groupValue: _priceType,
                           onChanged: (v) => setState(() => _priceType = v ?? _priceType),
@@ -353,7 +355,7 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
                       ),
                       Expanded(
                         child: RadioListTile<String>(
-                          title: const Text('Fixed'),
+                          title: Text(l10n.fixedPrice),
                           value: 'fixed',
                           groupValue: _priceType,
                           onChanged: (v) => setState(() => _priceType = v ?? _priceType),
@@ -366,7 +368,7 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
                   const SizedBox(height: 12),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Pickup Date'),
+                    title: Text(l10n.pickupDate),
                     subtitle: Text(
                       '${_pickupDate.day}/${_pickupDate.month}/${_pickupDate.year}',
                     ),
@@ -403,7 +405,7 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
 
             // Step 4: Review
             Step(
-              title: const Text('Review & Post'),
+              title: Text(l10n.review),
               isActive: _currentStep >= 3,
               content: Container(
                 padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -441,13 +443,34 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
   }
 
   Widget _reviewRow(String label, String value) {
+    final l10n = AppLocalizations.of(context)!;
+    String translatedLabel;
+    switch (label) {
+      case 'Material':
+        translatedLabel = l10n.material;
+        break;
+      case 'Weight':
+        translatedLabel = l10n.weight;
+        break;
+      case 'Truck Type':
+        translatedLabel = l10n.truckType;
+        break;
+      case 'Price':
+        translatedLabel = l10n.price;
+        break;
+      case 'Pickup':
+        translatedLabel = l10n.pickupDate;
+        break;
+      default:
+        translatedLabel = label;
+    }
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Row(
         children: [
           SizedBox(
             width: 100,
-            child: Text(label,
+            child: Text(translatedLabel,
                 style: AppTypography.caption
                     .copyWith(color: AppColors.textSecondary)),
           ),

@@ -1294,5 +1294,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mixed => 'Mixed Goods';
 
   @override
-  String get others => 'Others';
+  String get materialCement => 'Cement';
+
+  @override
+  String get materialSteel => 'Steel';
+
+  @override
+  String get materialCoal => 'Coal';
+
+  @override
+  String get materialGrain => 'Grain';
+
+  @override
+  String get materialChemicals => 'Chemicals';
+
+  @override
+  String get materialOther => 'Other';
+
+  @override
+  String get truckTypeAny => 'Any';
+
+  @override
+  String get truckTypeOpen => 'Open';
+
+  @override
+  String get truckTypeContainer => 'Container';
+
+  @override
+  String get truckTypeTrailer => 'Trailer';
+
+  @override
+  String get truckTypeTanker => 'Tanker';
+
+  @override
+  String get truckTypeRefrigerated => 'Refrigerated';
 }

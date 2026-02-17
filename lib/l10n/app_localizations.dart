@@ -2581,11 +2581,77 @@ abstract class AppLocalizations {
   /// **'Mixed Goods'**
   String get mixed;
 
-  /// No description provided for @others.
+  /// No description provided for @materialCement.
   ///
   /// In en, this message translates to:
-  /// **'Others'**
-  String get others;
+  /// **'Cement'**
+  String get materialCement;
+
+  /// No description provided for @materialSteel.
+  ///
+  /// In en, this message translates to:
+  /// **'Steel'**
+  String get materialSteel;
+
+  /// No description provided for @materialCoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Coal'**
+  String get materialCoal;
+
+  /// No description provided for @materialGrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Grain'**
+  String get materialGrain;
+
+  /// No description provided for @materialChemicals.
+  ///
+  /// In en, this message translates to:
+  /// **'Chemicals'**
+  String get materialChemicals;
+
+  /// No description provided for @materialOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get materialOther;
+
+  /// No description provided for @truckTypeAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any'**
+  String get truckTypeAny;
+
+  /// No description provided for @truckTypeOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get truckTypeOpen;
+
+  /// No description provided for @truckTypeContainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Container'**
+  String get truckTypeContainer;
+
+  /// No description provided for @truckTypeTrailer.
+  ///
+  /// In en, this message translates to:
+  /// **'Trailer'**
+  String get truckTypeTrailer;
+
+  /// No description provided for @truckTypeTanker.
+  ///
+  /// In en, this message translates to:
+  /// **'Tanker'**
+  String get truckTypeTanker;
+
+  /// No description provided for @truckTypeRefrigerated.
+  ///
+  /// In en, this message translates to:
+  /// **'Refrigerated'**
+  String get truckTypeRefrigerated;
 }
 
 class _AppLocalizationsDelegate

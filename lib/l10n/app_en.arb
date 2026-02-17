@@ -510,5 +510,17 @@
   "paper": "Paper",
   "scrap": "Scrap",
   "mixed": "Mixed Goods",
-  "others": "Others"
+  "materialCement": "Cement",
+  "materialSteel": "Steel",
+  "materialCoal": "Coal",
+  "materialGrain": "Grain",
+  "materialChemicals": "Chemicals",
+  "materialOther": "Other",
+
+  "truckTypeAny": "Any",
+  "truckTypeOpen": "Open",
+  "truckTypeContainer": "Container",
+  "truckTypeTrailer": "Trailer",
+  "truckTypeTanker": "Tanker",
+  "truckTypeRefrigerated": "Refrigerated"
 }

@@ -1293,5 +1293,38 @@ class AppLocalizationsHi extends AppLocalizations {
   String get mixed => 'मिश्रित सामान';
 
   @override
-  String get others => 'अन्य';
+  String get materialCement => 'सीमेंट';
+
+  @override
+  String get materialSteel => 'स्टील';
+
+  @override
+  String get materialCoal => 'कोयला';
+
+  @override
+  String get materialGrain => 'अनाज';
+
+  @override
+  String get materialChemicals => 'रसायन';
+
+  @override
+  String get materialOther => 'अन्य';
+
+  @override
+  String get truckTypeAny => 'कोई भी';
+
+  @override
+  String get truckTypeOpen => 'ओपन';
+
+  @override
+  String get truckTypeContainer => 'कंटेनर';
+
+  @override
+  String get truckTypeTrailer => 'ट्रेलर';
+
+  @override
+  String get truckTypeTanker => 'टैंकर';
+
+  @override
+  String get truckTypeRefrigerated => 'रेफ्रिजरेटेड';
 }

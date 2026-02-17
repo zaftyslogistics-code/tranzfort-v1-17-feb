@@ -430,5 +430,19 @@
   "paper": "कागज़",
   "scrap": "स्क्रैप",
   "mixed": "मिश्रित सामान",
-  "others": "अन्य"
+  "others": "अन्य",
+
+  "materialCement": "सीमेंट",
+  "materialSteel": "स्टील",
+  "materialCoal": "कोयला",
+  "materialGrain": "अनाज",
+  "materialChemicals": "रसायन",
+  "materialOther": "अन्य",
+
+  "truckTypeAny": "कोई भी",
+  "truckTypeOpen": "ओपन",
+  "truckTypeContainer": "कंटेनर",
+  "truckTypeTrailer": "ट्रेलर",
+  "truckTypeTanker": "टैंकर",
+  "truckTypeRefrigerated": "रेफ्रिजरेटेड"
 }
