@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -64,6 +65,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
@@ -76,26 +78,26 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
             children: [
               const SizedBox(height: 64),
               Text(
-                'What describes\nyou best?',
+                l10n.roleSelectionTitle,
                 style: AppTypography.h1Hero,
               ).staggerEntrance(0),
               const SizedBox(height: 8),
               Text(
-                'Choose your role to get started',
+                l10n.roleSelectionSubtitle,
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.textSecondary),
               ).staggerEntrance(1),
               const SizedBox(height: 48),
               _RoleCard(
-                title: 'I am a Supplier',
-                subtitle: 'Post Loads, Find Trucks, Track Deliveries',
+                title: l10n.iAmSupplier,
+                subtitle: l10n.supplierSubtitle,
                 icon: Icons.factory_outlined,
                 onTap: _isLoading ? null : () => _selectRole('supplier'),
               ).staggerEntrance(2),
               const SizedBox(height: AppSpacing.cardGap),
               _RoleCard(
-                title: 'I am a Trucker',
-                subtitle: 'Find Loads, Manage Fleet, Get Paid',
+                title: l10n.iAmTrucker,
+                subtitle: l10n.truckerSubtitle,
                 icon: Icons.local_shipping_outlined,
                 onTap: _isLoading ? null : () => _selectRole('trucker'),
               ).staggerEntrance(3),

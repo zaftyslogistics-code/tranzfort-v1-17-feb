@@ -246,6 +246,22 @@ class AppLocalizationsHi extends AppLocalizations {
   String get confirmPassword => 'पासवर्ड की पुष्टि करें';
 
   @override
+  String get firstName => 'पहला नाम';
+
+  @override
+  String get lastName => 'अंतिम नाम';
+
+  @override
+  String get agreeTo => 'मैं सहमत हूं';
+
+  @override
+  String get and => 'और';
+
+  @override
+  String get accountCreatedSuccess =>
+      'खाता बनाया गया! कृपया अपना ईमेल पुष्टि करें, फिर लॉगिन करें।';
+
+  @override
   String get passwordRequirements => 'पासवर्ड कम से कम 8 अक्षरों का होना चाहिए';
 
   @override

@@ -245,6 +245,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmPassword => 'Confirm Password';
 
   @override
+  String get firstName => 'First Name';
+
+  @override
+  String get lastName => 'Last Name';
+
+  @override
+  String get agreeTo => 'I agree to the';
+
+  @override
+  String get and => 'and';
+
+  @override
+  String get accountCreatedSuccess =>
+      'Account created! Please confirm your email, then log in.';
+
+  @override
   String get passwordRequirements => 'Password must be at least 8 characters';
 
   @override

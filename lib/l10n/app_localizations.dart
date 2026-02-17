@@ -566,6 +566,36 @@ abstract class AppLocalizations {
   /// **'Confirm Password'**
   String get confirmPassword;
 
+  /// No description provided for @firstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First Name'**
+  String get firstName;
+
+  /// No description provided for @lastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Name'**
+  String get lastName;
+
+  /// No description provided for @agreeTo.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree to the'**
+  String get agreeTo;
+
+  /// No description provided for @and.
+  ///
+  /// In en, this message translates to:
+  /// **'and'**
+  String get and;
+
+  /// No description provided for @accountCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account created! Please confirm your email, then log in.'**
+  String get accountCreatedSuccess;
+
   /// No description provided for @passwordRequirements.
   ///
   /// In en, this message translates to:
