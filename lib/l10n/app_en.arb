@@ -123,6 +123,7 @@
   "quickActions": "Quick Actions",
   "postLoadQuick": "Post a Load",
   "viewHistory": "View History",
+  "repeatLast": "Repeat Last",
 
   "stepOf": "Step {current} of {total}",
   "@stepOf": {

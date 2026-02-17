@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -18,12 +19,13 @@ class SupplierDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final profileAsync = ref.watch(userProfileProvider);
     final activeLoadsAsync = ref.watch(supplierActiveLoadsCountProvider);
     final unreadAsync = ref.watch(unreadChatsCountProvider);
 
     final profile = profileAsync.valueOrNull;
-    final userName = profile?['full_name'] as String? ?? 'Supplier';
+    final userName = profile?['full_name'] as String? ?? l10n.supplier;
     final verificationStatus =
         profile?['verification_status'] as String? ?? 'unverified';
     final isVerified = verificationStatus == 'verified';
@@ -32,7 +34,7 @@ class SupplierDashboardScreen extends ConsumerWidget {
       backgroundColor: AppColors.scaffoldBg,
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: Text(l10n.dashboard),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
@@ -57,7 +59,7 @@ class SupplierDashboardScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Welcome
-              Text('Welcome, $userName', style: AppTypography.h1Hero),
+              Text(l10n.welcomeUser(name: userName), style: AppTypography.h1Hero),
               const SizedBox(height: 4),
               if (!isVerified)
                 GestureDetector(
@@ -77,7 +79,7 @@ class SupplierDashboardScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Complete verification to post loads',
+                            l10n.completeVerification,
                             style: AppTypography.bodySmall
                                 .copyWith(color: AppColors.warning),
                           ),
@@ -97,7 +99,7 @@ class SupplierDashboardScreen extends ConsumerWidget {
                     child: StatCard(
                       icon: Icons.inventory_2,
                       value: '${activeLoadsAsync.valueOrNull ?? 0}',
-                      label: 'Active Loads',
+                      label: l10n.activeLoads,
                       onTap: () => context.go('/my-loads'),
                     ),
                   ),
@@ -106,7 +108,7 @@ class SupplierDashboardScreen extends ConsumerWidget {
                     child: StatCard(
                       icon: Icons.chat_bubble,
                       value: '${unreadAsync.valueOrNull ?? 0}',
-                      label: 'Unread Chats',
+                      label: l10n.messages,
                       iconColor: AppColors.brandOrange,
                       onTap: () => context.go('/messages'),
                     ),
@@ -116,16 +118,16 @@ class SupplierDashboardScreen extends ConsumerWidget {
               const SizedBox(height: 32),
 
               // Quick Actions
-              Text('Quick Actions',
+              Text(l10n.quickActions,
                   style: AppTypography.overline
                       .copyWith(letterSpacing: 0.8)),
               const SizedBox(height: 12),
               GradientButton(
-                text: 'Post New Load',
+                text: l10n.postLoad,
                 onPressed: isVerified
                     ? () => context.push('/post-load')
                     : () => AppDialogs.showSnackBar(
-                          context, 'Complete verification to post loads'),
+                          context, l10n.completeVerification),
               ),
               const SizedBox(height: 12),
               Row(
@@ -143,13 +145,13 @@ class SupplierDashboardScreen extends ConsumerWidget {
                               } else {
                                 if (context.mounted) {
                                   AppDialogs.showSnackBar(
-                                      context, 'No previous load to repeat');
+                                      context, l10n.noData);
                                 }
                               }
                             }
                           : null,
                       icon: const Icon(Icons.replay, size: 18),
-                      label: const Text('Repeat Last'),
+                      label: Text(l10n.repeatLast),
                       style: OutlinedButton.styleFrom(
                         minimumSize:
                             const Size.fromHeight(AppSpacing.buttonHeight),
@@ -162,7 +164,7 @@ class SupplierDashboardScreen extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () => context.go('/my-loads'),
                       icon: const Icon(Icons.list_alt, size: 18),
-                      label: const Text('My Loads'),
+                      label: Text(l10n.myLoads),
                       style: OutlinedButton.styleFrom(
                         minimumSize:
                             const Size.fromHeight(AppSpacing.buttonHeight),
@@ -175,7 +177,7 @@ class SupplierDashboardScreen extends ConsumerWidget {
               const SizedBox(height: 32),
 
               // Recent Loads
-              Text('Recent Loads',
+              Text(l10n.recentLoads,
                   style: AppTypography.overline
                       .copyWith(letterSpacing: 0.8)),
               const SizedBox(height: 12),
@@ -188,7 +190,7 @@ class SupplierDashboardScreen extends ConsumerWidget {
                       itemCount: 2,
                       type: SkeletonType.card,
                     ),
-                    error: (e, _) => Text('Error: $e'),
+                    error: (e, _) => Text('${l10n.error}: $e'),
                     data: (loads) {
                       if (loads.isEmpty) {
                         return Container(
@@ -200,7 +202,7 @@ class SupplierDashboardScreen extends ConsumerWidget {
                           ),
                           child: Center(
                             child: Text(
-                              'No loads posted yet',
+                              l10n.noData,
                               style: AppTypography.bodyMedium.copyWith(
                                   color: AppColors.textTertiary),
                             ),

@@ -746,6 +746,12 @@ abstract class AppLocalizations {
   /// **'View History'**
   String get viewHistory;
 
+  /// No description provided for @repeatLast.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat Last'**
+  String get repeatLast;
+
   /// No description provided for @stepOf.
   ///
   /// In en, this message translates to:

@@ -338,6 +338,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewHistory => 'View History';
 
   @override
+  String get repeatLast => 'Repeat Last';
+
+  @override
   String stepOf(int current, int total) {
     return 'Step $current of $total';
   }

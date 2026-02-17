@@ -112,6 +112,7 @@
   "quickActions": "त्वरित क्रियाएँ",
   "postLoadQuick": "लोड पोस्ट करें",
   "viewHistory": "इतिहास देखें",
+  "repeatLast": "पुनः दोहराएं",
 
   "stepOf": "चरण {current} / {total}",
   "routeDetails": "मार्ग विवरण",

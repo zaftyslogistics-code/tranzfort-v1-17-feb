@@ -341,6 +341,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get viewHistory => 'इतिहास देखें';
 
   @override
+  String get repeatLast => 'पुनः दोहराएं';
+
+  @override
   String stepOf(int current, int total) {
     return 'चरण $current / $total';
   }
