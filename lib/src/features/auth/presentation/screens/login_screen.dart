@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -94,9 +95,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleOtpLogin() async {
+    final l10n = AppLocalizations.of(context)!;
     final mobile = _mobileDigits;
     if (mobile.isEmpty) {
-      AppDialogs.showSnackBar(context, 'Enter your 10-digit mobile number');
+      AppDialogs.showSnackBar(context, l10n.enterMobileNumber);
       return;
     }
 
@@ -104,7 +106,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (mobileValidation != null) {
       AppDialogs.showSnackBar(
         context,
-        'Please enter a valid 10-digit Indian mobile number',
+        l10n.invalidMobile,
       );
       return;
     }
@@ -133,6 +135,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
@@ -150,11 +153,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 fit: BoxFit.contain,
               ).staggerEntrance(0),
               const SizedBox(height: 24),
-              Text('Welcome back', style: AppTypography.h1Hero)
+              Text(l10n.welcomeBack, style: AppTypography.h1Hero)
                   .staggerEntrance(1),
               const SizedBox(height: 4),
               Text(
-                'Sign in to continue',
+                l10n.signInToContinue,
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.textSecondary),
               ).staggerEntrance(2),
@@ -191,7 +194,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         : AppColors.borderDefault,
                                   ),
                                 ),
-                                child: const Text('Password'),
+                                child: Text(l10n.password),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -215,7 +218,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         : AppColors.borderDefault,
                                   ),
                                 ),
-                                child: const Text('Login with Phone'),
+                                child: Text(l10n.login),
                               ),
                             ),
                           ],
@@ -225,8 +228,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           controller: _identifierController,
                           decoration: InputDecoration(
                             labelText: _loginMode == _LoginMode.phoneOtp
-                                ? 'Mobile Number'
-                                : 'Email or Mobile',
+                                ? l10n.mobile
+                                : l10n.enterEmailOrMobile,
                             prefixIcon: Icon(
                               _loginMode == _LoginMode.phoneOtp
                                   ? Icons.phone_android_outlined
@@ -243,7 +246,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ? TextInputAction.done
                               : TextInputAction.next,
                           validator: (v) {
-                            if (v == null || v.isEmpty) return 'Required';
+                            if (v == null || v.isEmpty) return l10n.requiredField;
 
                             if (_loginMode == _LoginMode.phoneOtp) {
                               return Validators.indianMobile(_mobileDigits);
@@ -263,7 +266,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           TextFormField(
                             controller: _passwordController,
                             decoration: InputDecoration(
-                              labelText: 'Password',
+                              labelText: l10n.password,
                               prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 icon: Icon(_obscurePassword
@@ -283,15 +286,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: () => context.push('/forgot-password'),
-                              child: const Text('Forgot Password?'),
+                              child: Text(l10n.forgotPassword),
                             ),
                           ),
                         ],
                         const SizedBox(height: 16),
                         GradientButton(
                           text: _loginMode == _LoginMode.phoneOtp
-                              ? 'Send OTP'
-                              : 'Login',
+                              ? l10n.resendOtp
+                              : l10n.login,
                           isLoading: _isLoading,
                           onPressed: _isLoading
                               ? null
@@ -312,14 +315,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Don't have an account? ",
+                      "${l10n.noAccount} ",
                       style: AppTypography.bodyMedium
                           .copyWith(color: AppColors.textSecondary),
                     ),
                     GestureDetector(
                       onTap: () => context.push('/signup'),
                       child: Text(
-                        'Sign Up',
+                        l10n.signup,
                         style: AppTypography.bodyMedium.copyWith(
                           color: AppColors.brandTeal,
                           fontWeight: FontWeight.w600,
