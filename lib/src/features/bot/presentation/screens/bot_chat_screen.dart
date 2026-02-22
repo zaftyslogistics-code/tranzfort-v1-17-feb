@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
@@ -72,6 +74,48 @@ class _BotChatScreenState extends ConsumerState<BotChatScreen> {
         return;
       }
     }
+    // Task 4.9: Show onboarding on first bot open, regular greeting after
+    await _showOnboardingOrGreeting();
+  }
+
+  /// Task 4.9: On first bot open show onboarding message from prompt JSON.
+  /// Subsequent opens show the regular context-aware greeting.
+  Future<void> _showOnboardingOrGreeting() async {
+    final prefs = await SharedPreferences.getInstance();
+    const key = 'bot_onboarding_shown';
+
+    if (!prefs.containsKey(key)) {
+      // First time — load onboarding message from prompt asset
+      final lang = ref.read(localeProvider).languageCode;
+      final assetPath = lang == 'hi'
+          ? 'assets/prompts/system/onboarding_hi.json'
+          : 'assets/prompts/system/onboarding_en.json';
+
+      try {
+        final jsonStr = await rootBundle.loadString(assetPath);
+        final data = json.decode(jsonStr) as Map<String, dynamic>;
+        final message = data['message'] as String? ?? '';
+
+        if (message.isNotEmpty && mounted) {
+          final suggestions = _getRoleSuggestions(lang);
+          final onboardingMsg = BotMessage(
+            text: message,
+            isUser: false,
+            suggestions: suggestions,
+          );
+          setState(() => _messages.add(onboardingMsg));
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _scrollToBottom());
+          _tts.speak(onboardingMsg.ttsText, lang);
+          await prefs.setBool(key, true);
+          return;
+        }
+      } catch (_) {
+        // Fall through to regular greeting if asset load fails
+      }
+    }
+
+    // Subsequent opens — regular greeting
     _addBotGreeting();
   }
 

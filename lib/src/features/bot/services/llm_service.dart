@@ -38,6 +38,7 @@ class LlmService {
 
   static const _contextSize = 2048;
   static const _maxTokens = 256;
+  static const _maxOutputChars = 500;
 
   bool get isLoaded => _isLoaded;
   LlmTimingMetrics? get lastMetrics => _lastMetrics;
@@ -75,10 +76,41 @@ class LlmService {
         return false;
       }
 
+      // AI-01: Actually validate model by running a minimal inference.
+      // This catches corrupt files and OOM before the user sends a message.
+      final testRequest = OpenAiRequest(
+        maxTokens: 1,
+        messages: [Message(Role.user, 'hi')],
+        numGpuLayers: 0,
+        modelPath: modelPath,
+        contextSize: 512,
+        temperature: 0.0,
+      );
+
+      final testCompleter = Completer<bool>();
+      fllamaChat(testRequest, (response, token, done) {
+        if (done && !testCompleter.isCompleted) {
+          testCompleter.complete(true);
+        }
+      });
+
+      final ok = await testCompleter.future
+          .timeout(const Duration(seconds: 30), onTimeout: () => false);
+
+      if (!ok) {
+        debugPrint('LlmService: model validation timed out');
+        return false;
+      }
+
       _loadedModelPath = modelPath;
       _isLoaded = true;
-      debugPrint('LlmService: model ready at $modelPath');
+      debugPrint('LlmService: model loaded and validated at $modelPath');
       return true;
+    } on OutOfMemoryError {
+      debugPrint('LlmService: OOM — device cannot load this model');
+      _isLoaded = false;
+      _loadedModelPath = null;
+      return false;
     } catch (e, stack) {
       debugPrint('LlmService: load error: $e');
       debugPrint('LlmService: stack: $stack');
@@ -202,6 +234,20 @@ class LlmService {
     }
   }
 
+  /// Truncate and clean LLM output: max 500 chars, strip empty responses.
+  String _sanitizeOutput(String raw, String language) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return language == 'hi'
+          ? 'मुझे समझ नहीं आया। कृपया दोबारा बताइए।'
+          : 'I didn\'t quite get that. Could you rephrase?';
+    }
+    if (trimmed.length > _maxOutputChars) {
+      return '${trimmed.substring(0, _maxOutputChars)}...';
+    }
+    return trimmed;
+  }
+
   /// Generate a complete (non-streaming) response.
   Future<String> generateResponse({
     required String userMessage,
@@ -218,7 +264,7 @@ class LlmService {
     )) {
       buffer.write(token);
     }
-    return buffer.toString();
+    return _sanitizeOutput(buffer.toString(), language);
   }
 
   String _buildSystemPrompt(String? userRole, String language) {
