@@ -8,11 +8,13 @@ import '../models/bot_intent.dart';
 import '../models/bot_response.dart';
 import '../models/conversation_state.dart';
 import 'entity_extractor.dart';
+import 'input_sanitizer.dart';
 
 class BasicBotService {
   Map<String, dynamic> _intentsEn = {};
   Map<String, dynamic> _intentsHi = {};
   final EntityExtractor _entityExtractor = EntityExtractor();
+  final InputSanitizer _inputSanitizer = InputSanitizer();
   final Map<String, ConversationState> _conversations = {};
   bool _isLoaded = false;
   DatabaseService? _db; // P2-3/P2-4: optional DB access for data queries
@@ -172,8 +174,17 @@ class BasicBotService {
     await initialize();
     final state = _getState(userId);
 
+    // Sanitize input: trim, strip tags, truncate, normalize Unicode
+    final sanitizedMessage = _inputSanitizer.sanitize(message);
+    if (sanitizedMessage.isEmpty) {
+      return BotResponse(
+        text: language == 'hi' ? 'कृपया कुछ टाइप करें।' : 'Please type something.',
+        suggestions: _getQuickSuggestions(language, userRole),
+      );
+    }
+
     // Add user message to history
-    state.addMessage(BotMessage(text: message, isUser: true));
+    state.addMessage(BotMessage(text: sanitizedMessage, isUser: true));
     _trimHistory(state);
 
     // Handle action responses (confirm/reset)

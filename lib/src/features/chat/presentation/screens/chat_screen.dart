@@ -742,7 +742,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         color: AppColors.cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -894,7 +894,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 2,
             ),
           ],
@@ -980,7 +980,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     color: AppColors.brandTealLight,
                     border: Border(
                       bottom: BorderSide(
-                        color: AppColors.brandTeal.withOpacity(0.20),
+                        color: AppColors.brandTeal.withValues(alpha: 0.20),
                       ),
                     ),
                   ),
@@ -1080,7 +1080,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -1182,7 +1182,7 @@ class _MessageBubble extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -1201,7 +1201,7 @@ class _MessageBubble extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     color: isMine
-                        ? Colors.white.withOpacity(0.70)
+                        ? Colors.white.withValues(alpha: 0.70)
                         : AppColors.textTertiary,
                   ),
                 ),
@@ -1218,7 +1218,7 @@ class _MessageBubble extends StatelessWidget {
                     child: CircularProgressIndicator(
                       strokeWidth: 1.5,
                       color: isMine
-                          ? Colors.white.withOpacity(0.50)
+                          ? Colors.white.withValues(alpha: 0.50)
                           : AppColors.textTertiary,
                     ),
                   ),
@@ -1254,7 +1254,7 @@ class _MessageBubble extends StatelessWidget {
       return Icon(
         Icons.done,
         size: 14,
-        color: Colors.white.withOpacity(0.60),
+        color: Colors.white.withValues(alpha: 0.60),
       );
     }
   }
@@ -1303,7 +1303,7 @@ class _MessageBubble extends StatelessWidget {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: isMine
-              ? Colors.white.withOpacity(0.15)
+              ? Colors.white.withValues(alpha: 0.15)
               : AppColors.brandTealLight,
           borderRadius: BorderRadius.circular(8),
         ),
@@ -1327,7 +1327,7 @@ class _MessageBubble extends StatelessWidget {
                 ),
                 Icon(Icons.open_in_new, size: 12,
                     color: isMine
-                        ? Colors.white.withOpacity(0.60)
+                        ? Colors.white.withValues(alpha: 0.60)
                         : AppColors.textTertiary),
               ],
             ),
@@ -1338,7 +1338,7 @@ class _MessageBubble extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   color: isMine
-                      ? Colors.white.withOpacity(0.80)
+                      ? Colors.white.withValues(alpha: 0.80)
                       : AppColors.textSecondary,
                 ),
               ),
@@ -1415,7 +1415,7 @@ class _MessageBubble extends StatelessWidget {
     final p = message.payload ?? {};
     final textColor = isMine ? Colors.white : AppColors.textPrimary;
     final subtextColor = isMine
-        ? Colors.white.withOpacity(0.80)
+        ? Colors.white.withValues(alpha: 0.80)
         : AppColors.textSecondary;
 
     return Container(
@@ -1423,13 +1423,13 @@ class _MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: isMine
-            ? Colors.white.withOpacity(0.15)
+            ? Colors.white.withValues(alpha: 0.15)
             : AppColors.brandTealLight,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isMine
-              ? Colors.white.withOpacity(0.25)
-              : AppColors.brandTeal.withOpacity(0.30),
+              ? Colors.white.withValues(alpha: 0.25)
+              : AppColors.brandTeal.withValues(alpha: 0.30),
           width: 1,
         ),
       ),
@@ -1485,7 +1485,7 @@ class _MessageBubble extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(
                     color: isMine
-                        ? Colors.white.withOpacity(0.20)
+                        ? Colors.white.withValues(alpha: 0.20)
                         : AppColors.scaffoldBg,
                     borderRadius: BorderRadius.circular(4),
                   ),
@@ -1524,11 +1524,11 @@ class _MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isMine
-            ? Colors.white.withOpacity(0.15)
+            ? Colors.white.withValues(alpha: 0.15)
             : AppColors.successLight,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.success.withOpacity(0.40),
+          color: AppColors.success.withValues(alpha: 0.40),
           width: 1.5,
         ),
       ),
@@ -1563,7 +1563,7 @@ class _MessageBubble extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               color: isMine
-                  ? Colors.white.withOpacity(0.80)
+                  ? Colors.white.withValues(alpha: 0.80)
                   : AppColors.textSecondary,
             ),
           ),
@@ -1572,7 +1572,7 @@ class _MessageBubble extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: isMine
-                  ? Colors.white.withOpacity(0.10)
+                  ? Colors.white.withValues(alpha: 0.10)
                   : Colors.white,
               borderRadius: BorderRadius.circular(6),
             ),
@@ -1585,7 +1585,7 @@ class _MessageBubble extends StatelessWidget {
                     Text('Price',
                         style: TextStyle(fontSize: 10,
                             color: isMine
-                            ? Colors.white.withOpacity(0.60)
+                            ? Colors.white.withValues(alpha: 0.60)
                             : AppColors.textTertiary)),
                     Text('₹${p['proposed_price'] ?? '-'}/ton',
                         style: TextStyle(
@@ -1601,7 +1601,7 @@ class _MessageBubble extends StatelessWidget {
                     Text('Advance',
                         style: TextStyle(fontSize: 10,
                             color: isMine
-                            ? Colors.white.withOpacity(0.60)
+                            ? Colors.white.withValues(alpha: 0.60)
                             : AppColors.textTertiary)),
                     Text('${p['advance_percentage'] ?? '-'}%',
                         style: TextStyle(
@@ -1674,7 +1674,7 @@ class _MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: isMine
-            ? Colors.white.withOpacity(0.15)
+            ? Colors.white.withValues(alpha: 0.15)
             : AppColors.infoLight,
         borderRadius: BorderRadius.circular(8),
       ),
@@ -1733,7 +1733,7 @@ class _MessageBubble extends StatelessWidget {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: isMine
-              ? Colors.white.withOpacity(0.15)
+              ? Colors.white.withValues(alpha: 0.15)
               : AppColors.warningLight,
           borderRadius: BorderRadius.circular(8),
         ),
@@ -1763,7 +1763,7 @@ class _MessageBubble extends StatelessWidget {
                       'Tap to view',
                       style: TextStyle(
                         color: isMine
-                            ? Colors.white.withOpacity(0.70)
+                            ? Colors.white.withValues(alpha: 0.70)
                             : AppColors.textSecondary,
                         fontSize: 11,
                       ),
@@ -1813,7 +1813,7 @@ class _AttachOption extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
+          color: color.withValues(alpha: 0.12),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: color, size: 20),

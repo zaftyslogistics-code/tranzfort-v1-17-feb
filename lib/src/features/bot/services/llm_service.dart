@@ -36,7 +36,6 @@ class LlmService {
   LlmTimingMetrics? _lastMetrics;
   final List<Message> _conversationHistory = [];
 
-  static const _idleTimeoutMinutes = 5;
   static const _contextSize = 2048;
   static const _maxTokens = 256;
 

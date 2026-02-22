@@ -18,10 +18,6 @@ class BotResponseBuilder {
     required String language,
     String? userRole,
   }) {
-    final filledCount = _countFilledSlots(intent, state);
-    final totalSlots = _totalSlots(intent);
-    final progress = totalSlots > 0 ? '($filledCount/$totalSlots)' : '';
-
     return BotResponse(
       text: promptText,
       intentType: intent.name,
@@ -113,8 +109,9 @@ class BotResponseBuilder {
     String? userRole,
   }) {
     String text;
-    if (_promptComposer != null) {
-      text = _promptComposer!.error('fallback');
+    final composer = _promptComposer;
+    if (composer != null) {
+      text = composer.error('fallback');
     } else {
       text = _defaultFallback(language, userRole);
     }
@@ -154,27 +151,6 @@ class BotResponseBuilder {
     return isHi
         ? ['लोड पोस्ट करो', 'लोड खोजो', 'मदद']
         : ['Post Load', 'Find Loads', 'Help'];
-  }
-
-  int _countFilledSlots(BotIntentType intent, ConversationState state) {
-    final order = _slotOrderFor(intent);
-    return order.where((s) => state.hasSlot(s)).length;
-  }
-
-  int _totalSlots(BotIntentType intent) {
-    return _slotOrderFor(intent).length;
-  }
-
-  List<String> _slotOrderFor(BotIntentType intent) {
-    switch (intent) {
-      case BotIntentType.postLoad:
-        return const ['origin', 'destination', 'material', 'weight', 'price',
-          'price_type', 'advance_percentage', 'truck_type', 'tyres', 'pickup_date', 'notes'];
-      case BotIntentType.findLoads:
-        return const ['origin', 'destination', 'search_truck_type', 'search_material'];
-      default:
-        return const [];
-    }
   }
 
   List<String>? _slotSuggestions(

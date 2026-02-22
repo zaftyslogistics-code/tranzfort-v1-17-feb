@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:tranzfort/src/core/config/supabase_config.dart';
@@ -15,7 +16,7 @@ void main() {
     test('API key should make successful autocomplete request', () async {
       final apiKey = SupabaseConfig.googlePlacesApiKey;
       
-      print('Testing NEW Places API with key: ${apiKey.substring(0, 10)}... (${apiKey.length} chars)');
+      debugPrint('Testing NEW Places API with key: ${apiKey.substring(0, 10)}... (${apiKey.length} chars)');
       
       final body = json.encode({
         'input': 'Mumbai Central',
@@ -30,8 +31,8 @@ void main() {
         body: body,
       ).timeout(const Duration(seconds: 10));
       
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
       
       expect(response.statusCode, equals(200), 
           reason: 'API should return 200 OK');
@@ -39,14 +40,14 @@ void main() {
       final data = json.decode(response.body) as Map<String, dynamic>;
       final suggestions = data['suggestions'] as List<dynamic>? ?? [];
       
-      print('Suggestions count: ${suggestions.length}');
+      debugPrint('Suggestions count: ${suggestions.length}');
       
       // List first few predictions for debugging
       for (var i = 0; i < suggestions.length && i < 3; i++) {
         final s = suggestions[i] as Map<String, dynamic>;
         final placePrediction = s['placePrediction'] as Map<String, dynamic>?;
         final text = placePrediction?['text'] as Map<String, dynamic>?;
-        print('  ${i + 1}. ${text?['text'] ?? 'N/A'}');
+        debugPrint('  ${i + 1}. ${text?['text'] ?? 'N/A'}');
       }
       
       expect(suggestions.isNotEmpty, isTrue,
@@ -71,20 +72,20 @@ void main() {
       final data = json.decode(response.body) as Map<String, dynamic>;
       final suggestions = data['suggestions'] as List<dynamic>? ?? [];
       
-      print('Search for "Hinjewadi IT Park Pune":');
-      print('  Status: ${response.statusCode}');
-      print('  Results: ${suggestions.length}');
+      debugPrint('Search for "Hinjewadi IT Park Pune":');
+      debugPrint('  Status: ${response.statusCode}');
+      debugPrint('  Results: ${suggestions.length}');
       
       for (var i = 0; i < suggestions.length && i < 3; i++) {
         final s = suggestions[i] as Map<String, dynamic>;
         final placePrediction = s['placePrediction'] as Map<String, dynamic>?;
         final text = placePrediction?['text'] as Map<String, dynamic>?;
-        print('    ${i + 1}. ${text?['text'] ?? 'N/A'}');
+        debugPrint('    ${i + 1}. ${text?['text'] ?? 'N/A'}');
       }
       
       // Skip if API key has restrictions that block test environment
       if (response.statusCode == 403) {
-        print('WARNING: API key restricted (403). Skipping test in CI environment.');
+        debugPrint('WARNING: API key restricted (403). Skipping test in CI environment.');
         return;
       }
     });

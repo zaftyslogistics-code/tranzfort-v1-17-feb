@@ -120,7 +120,7 @@ class AiSttService {
   }
 
   /// Stop recording and transcribe the audio.
-  /// [language] — 'hi' for Hindi, 'en' for English.
+  /// [language] — ignored; Whisper auto-detects language for Hinglish support (AI-07).
   /// Returns transcribed text, or null on failure.
   Future<String?> stopAndTranscribe({String language = 'en'}) async {
     if (!_isRecording) return null;
@@ -138,13 +138,14 @@ class AiSttService {
         return null;
       }
 
-      debugPrint('AiSttService: transcribing $path (lang=$language)');
+      debugPrint('AiSttService: transcribing $path (auto-detect language)');
 
+      // AI-07: No forced language — let Whisper auto-detect.
+      // Truckers code-switch between Hindi and English (Hinglish).
       final result = await _whisper!.transcribe(
         transcribeRequest: TranscribeRequest(
           audio: path,
           isTranslate: false,
-          language: language,
           isNoTimestamps: true,
         ),
       );

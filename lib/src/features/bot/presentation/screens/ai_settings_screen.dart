@@ -357,6 +357,7 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
     // Check model file first
     final mgr = ref.read(aiModelManagerProvider);
     final modelPath = await mgr.getModelPath(AiModelType.llm);
+    if (!mounted) return;
     if (modelPath == null) {
       AppDialogs.showErrorSnackBar(context, 'LLM: Model not downloaded');
       return;
@@ -373,6 +374,7 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
     }
 
     final ok = await llm.load();
+    if (!mounted) return;
     if (!ok) {
       AppDialogs.showErrorSnackBar(context, 'LLM: Failed to load model (check logs)');
       return;
@@ -403,6 +405,7 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
       // Try to get more details about why it failed
       final mgr = ref.read(aiModelManagerProvider);
       final modelPath = await mgr.getModelPath(AiModelType.tts);
+      if (!mounted) return;
       String errorDetail = '';
       if (modelPath == null) {
         errorDetail = 'Model not downloaded';
@@ -448,18 +451,18 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
     } else {
       // Start recording
       final ok = await stt.initialize();
+      if (!mounted) return;
       if (!ok) {
         AppDialogs.showErrorSnackBar(context, 'STT failed to initialize');
         return;
       }
 
       final started = await stt.startRecording();
+      if (!mounted) return;
       if (started) {
         _isRecordingStt = true;
-        if (mounted) {
-          setState(() {});
-          AppDialogs.showSuccessSnackBar(context, 'Recording... Tap Stop when done');
-        }
+        setState(() {});
+        AppDialogs.showSuccessSnackBar(context, 'Recording... Tap Stop when done');
       } else {
         AppDialogs.showErrorSnackBar(context, 'Failed to start recording');
       }
@@ -609,7 +612,7 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                       Switch(
                         value: isEnabled,
                         onChanged: (v) => _setToggle(info.type, v),
-                        activeColor: AppColors.brandTeal,
+                        activeTrackColor: AppColors.brandTeal,
                       ),
                     ],
                   ),

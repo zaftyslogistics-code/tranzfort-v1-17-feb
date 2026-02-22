@@ -58,11 +58,11 @@ class MapMessageCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isMine
-            ? AppColors.brandTeal.withOpacity(0.08)
+            ? AppColors.brandTeal.withValues(alpha: 0.08)
             : AppColors.cardBg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.brandTeal.withOpacity(0.25),
+          color: AppColors.brandTeal.withValues(alpha: 0.25),
         ),
       ),
       child: Column(

@@ -5,7 +5,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 ///
 /// Tap-to-toggle UX: one tap starts, next tap stops.
 /// No press-and-hold, no race conditions, no custom booleans.
-/// Language hint: hi_IN for Hindi/Hinglish, en_IN for English.
+/// Language: no forced hint — let platform auto-detect for Hinglish code-switching.
 ///
 /// API:
 ///   [initialize]              — request mic permission, init plugin.
@@ -47,7 +47,7 @@ class BotSttService {
   // ── Listening ──────────────────────────────────────────────────────────────
 
   /// Start listening.
-  /// [language] — 'hi' for Hindi/Hinglish (hi_IN), 'en' for English (en_IN).
+  /// [language] — ignored; platform STT auto-detects language for Hinglish support.
   /// [onResult]  — called with partial and final results.
   /// [onDone]    — called when engine stops (final result ready).
   Future<void> start({
@@ -58,10 +58,10 @@ class BotSttService {
     if (!_initialized) await initialize();
     if (!_stt.isAvailable) return;
 
-    final localeId = language == 'hi' ? 'hi_IN' : 'en_IN';
-
+    // AI-07: No forced locale — let platform auto-detect language.
+    // Indian truckers code-switch between Hindi and English (Hinglish).
+    // Forcing hi_IN or en_IN breaks recognition for the other language.
     await _stt.listen(
-      localeId: localeId,
       listenOptions: SpeechListenOptions(
         listenMode: ListenMode.dictation,
         partialResults: true,

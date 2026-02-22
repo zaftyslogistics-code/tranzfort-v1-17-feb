@@ -31,8 +31,8 @@ class PromptComposer {
     final normalKey = 'tasks.$task.slots.$slot';
 
     if (isRetry) {
-      final retry = _registry.get(retryKey, fallback: null);
-      if (retry != null && retry != retryKey) return retry;
+      final retry = _registry.get(retryKey, fallback: retryKey);
+      if (retry != retryKey) return retry;
     }
     return _registry.get(normalKey, fallback: 'Please provide $slot');
   }
