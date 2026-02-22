@@ -60,6 +60,13 @@ ios/Runner/GoogleService-Info.plist
 *.jks
 key.properties
 
-# Documentation (excluded as requested)
+# Documentation (excluded from remote)
 docs/
 /docs/
+
+# Root-level markdown files (internal task logs, guides)
+/*.md
+!ios/**/README.md
+
+# Environment variants
+.env.staging
