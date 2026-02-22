@@ -112,7 +112,11 @@ class SupplierDashboardScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+
+              // Task 5.3: Pending bookings — "Needs Your Action"
+              _PendingBookingsSection(),
+              const SizedBox(height: 16),
 
               // Stats
               Row(
@@ -286,6 +290,172 @@ class SupplierDashboardScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Task 5.3: "Needs Your Action" section showing pending booking requests.
+class _PendingBookingsSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendingAsync = ref.watch(supplierPendingBookingsProvider);
+
+    return pendingAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (pending) {
+        if (pending.isEmpty) return const SizedBox.shrink();
+
+        final isHi = ref.watch(localeProvider).languageCode == 'hi';
+
+        return Container(
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
+          decoration: BoxDecoration(
+            color: AppColors.errorLight,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.notification_important,
+                      size: 18, color: AppColors.error),
+                  const SizedBox(width: 8),
+                  Text(
+                    isHi
+                        ? 'आपकी कार्रवाई चाहिए (${pending.length})'
+                        : 'Needs Your Action (${pending.length})',
+                    style: AppTypography.h3Subsection
+                        .copyWith(color: AppColors.error),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...pending.map((load) => _PendingBookingCard(load: load)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PendingBookingCard extends ConsumerWidget {
+  final Map<String, dynamic> load;
+
+  const _PendingBookingCard({required this.load});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isHi = ref.watch(localeProvider).languageCode == 'hi';
+    final origin = load['origin_city'] as String? ?? '';
+    final dest = load['dest_city'] as String? ?? '';
+    final material = load['material'] as String? ?? '';
+    final weight = load['weight_tonnes']?.toString() ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$origin → $dest',
+            style: AppTypography.bodyMedium
+                .copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$material • ${weight}T',
+            style: AppTypography.bodySmall
+                .copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: FilledButton(
+                    onPressed: () async {
+                      final loadId = load['id'] as String?;
+                      if (loadId == null) return;
+                      try {
+                        await ref.read(databaseServiceProvider).updateLoad(
+                          loadId,
+                          {'status': 'booked'},
+                        );
+                        ref.invalidate(supplierPendingBookingsProvider);
+                        ref.invalidate(supplierActiveLoadsCountProvider);
+                        if (context.mounted) {
+                          AppDialogs.showSuccessSnackBar(
+                            context,
+                            isHi ? 'बुकिंग स्वीकृत!' : 'Booking approved!',
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          AppDialogs.showErrorSnackBar(context, e);
+                        }
+                      }
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                    ),
+                    child: Text(isHi ? 'स्वीकार' : 'Approve'),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final loadId = load['id'] as String?;
+                      if (loadId == null) return;
+                      try {
+                        await ref.read(databaseServiceProvider).updateLoad(
+                          loadId,
+                          {
+                            'status': 'active',
+                            'booked_by_trucker_id': null,
+                            'booked_truck_id': null,
+                            'booking_requested_at': null,
+                          },
+                        );
+                        ref.invalidate(supplierPendingBookingsProvider);
+                        ref.invalidate(supplierActiveLoadsCountProvider);
+                        if (context.mounted) {
+                          AppDialogs.showSuccessSnackBar(
+                            context,
+                            isHi ? 'बुकिंग अस्वीकृत' : 'Booking rejected',
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          AppDialogs.showErrorSnackBar(context, e);
+                        }
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                    ),
+                    child: Text(isHi ? 'अस्वीकार' : 'Reject'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -125,6 +125,17 @@ final supplierActiveLoadsCountProvider = FutureProvider<int>((ref) async {
   return loads.where((l) => l['status'] == 'active').length;
 });
 
+final supplierPendingBookingsProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final authService = ref.read(authServiceProvider);
+  final userId = authService.currentUser?.id;
+  if (userId == null) return [];
+
+  final db = ref.read(databaseServiceProvider);
+  final loads = await db.getMyLoads(userId);
+  return loads.where((l) => l['status'] == 'pending_approval').toList();
+});
+
 final supplierRecentLoadsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final authService = ref.read(authServiceProvider);
