@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -11,6 +12,8 @@ import '../../../../shared/widgets/empty_state.dart';
 import '../../../../core/utils/animations.dart';
 import '../../../../shared/widgets/error_retry.dart';
 import '../../../../shared/widgets/skeleton_loader.dart';
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/widgets/tts_button.dart';
 
 final _conversationsProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -31,7 +34,22 @@ class ChatListScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
-      appBar: AppBar(title: const Text('Messages')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.messages),
+        actions: [
+          conversationsAsync.whenData((convs) {
+            final isHi = ref.watch(localeProvider).languageCode == 'hi';
+            return TtsButton(
+              text: 'Read aloud',
+              spokenText: isHi
+                  ? 'संदेश। आपके ${convs.length} सक्रिय वार्तालाप हैं।'
+                  : 'Messages. You have ${convs.length} conversations.',
+              locale: isHi ? 'hi-IN' : 'en-IN',
+              size: 22,
+            );
+          }).valueOrNull ?? const SizedBox.shrink(),
+        ],
+      ),
       drawer: const AppDrawer(),
       bottomNavigationBar: BottomNavBar(currentRole: role),
       body: conversationsAsync.when(
@@ -46,10 +64,19 @@ class ChatListScreen extends ConsumerWidget {
           if (conversations.isEmpty) {
             return EmptyState(
               icon: Icons.chat_bubble_outline,
-              title: 'No conversations yet',
-              description: role == 'supplier'
-                  ? 'Truckers will contact you when they find your loads'
-                  : 'Start chatting by finding a load',
+              title: AppLocalizations.of(context)!.noMessages,
+              description: AppLocalizations.of(context)!.noData,
+            );
+          }
+
+          // Phase 4A: Supplier view groups conversations by load
+          final isSupplier = role == 'supplier';
+
+          if (isSupplier) {
+            return _SupplierGroupedInbox(
+              conversations: conversations,
+              currentUserId: userId ?? '',
+              onRefresh: () => ref.invalidate(_conversationsProvider),
             );
           }
 
@@ -209,7 +236,7 @@ class _ConversationTile extends StatelessWidget {
 
   String _formatTime(String dateStr) {
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       final now = DateTime.now();
       final diff = now.difference(date);
 
@@ -227,5 +254,194 @@ class _ConversationTile extends StatelessWidget {
     } catch (_) {
       return '';
     }
+  }
+}
+
+/// Phase 4A: Supplier inbox grouped by load.
+/// Groups conversations under load headers so suppliers can see
+/// all trucker inquiries per load at a glance.
+class _SupplierGroupedInbox extends StatefulWidget {
+  final List<Map<String, dynamic>> conversations;
+  final String currentUserId;
+  final VoidCallback onRefresh;
+
+  const _SupplierGroupedInbox({
+    required this.conversations,
+    required this.currentUserId,
+    required this.onRefresh,
+  });
+
+  @override
+  State<_SupplierGroupedInbox> createState() => _SupplierGroupedInboxState();
+}
+
+class _SupplierGroupedInboxState extends State<_SupplierGroupedInbox> {
+  final Set<String> _collapsed = {};
+
+  @override
+  Widget build(BuildContext context) {
+    // Group conversations by load_id
+    final grouped = <String, List<Map<String, dynamic>>>{};
+    final loadMeta = <String, Map<String, dynamic>>{};
+
+    for (final conv in widget.conversations) {
+      final loadId = conv['load_id'] as String? ?? 'no_load';
+      grouped.putIfAbsent(loadId, () => []);
+      grouped[loadId]!.add(conv);
+      // Store load metadata from first conversation
+      if (!loadMeta.containsKey(loadId)) {
+        loadMeta[loadId] = conv;
+      }
+    }
+
+    // Sort groups: most recent message first
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) {
+        final aTime = grouped[a]!.first['last_message_at'] as String? ?? '';
+        final bTime = grouped[b]!.first['last_message_at'] as String? ?? '';
+        return bTime.compareTo(aTime);
+      });
+
+    return RefreshIndicator(
+      color: AppColors.brandTeal,
+      onRefresh: () async => widget.onRefresh(),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        itemCount: sortedKeys.length,
+        itemBuilder: (context, index) {
+          final loadId = sortedKeys[index];
+          final convs = grouped[loadId]!;
+          final meta = loadMeta[loadId]!;
+          final isCollapsed = _collapsed.contains(loadId);
+
+          // Count total unread across all conversations for this load
+          final totalUnread = convs.fold<int>(
+            0, (sum, c) => sum + ((c['unread_count'] as int?) ?? 0),
+          );
+
+          final originCity = meta['origin_city'] as String? ??
+              meta['load_origin_city'] as String? ?? '';
+          final destCity = meta['dest_city'] as String? ??
+              meta['load_dest_city'] as String? ?? '';
+          final material = meta['material'] as String? ??
+              meta['load_material'] as String? ?? '';
+          final weight = meta['weight_tonnes'] ?? meta['load_weight_tonnes'] ?? '';
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Load header
+              InkWell(
+                onTap: () => setState(() {
+                  if (isCollapsed) {
+                    _collapsed.remove(loadId);
+                  } else {
+                    _collapsed.add(loadId);
+                  }
+                }),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenPaddingH,
+                    vertical: 10,
+                  ),
+                  color: AppColors.scaffoldBg,
+                  child: Row(
+                    children: [
+                      Icon(
+                        isCollapsed
+                            ? Icons.keyboard_arrow_right
+                            : Icons.keyboard_arrow_down,
+                        size: 20,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandTealLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(Icons.inventory_2,
+                            size: 16, color: AppColors.brandTeal),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              originCity.isNotEmpty && destCity.isNotEmpty
+                                  ? '$originCity → $destCity'
+                                  : 'Load',
+                              style: AppTypography.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (material.isNotEmpty || weight.toString().isNotEmpty)
+                              Text(
+                                [
+                                  if (material.isNotEmpty) material,
+                                  if (weight.toString().isNotEmpty) '${weight}T',
+                                ].join(' • '),
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      // Trucker count + unread badge
+                      Text(
+                        '${convs.length}',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(Icons.people_outline,
+                          size: 14, color: AppColors.textTertiary),
+                      if (totalUnread > 0) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.brandTeal,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            totalUnread > 99 ? '99+' : '$totalUnread',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              // Divider
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              // Conversation tiles (collapsible)
+              if (!isCollapsed)
+                ...convs.asMap().entries.map((entry) {
+                  return _ConversationTile(
+                    conversation: entry.value,
+                    currentUserId: widget.currentUserId,
+                    currentRole: 'supplier',
+                  ).staggerEntrance(entry.key);
+                }),
+            ],
+          );
+        },
+      ),
+    );
   }
 }

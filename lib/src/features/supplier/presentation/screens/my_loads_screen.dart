@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -13,6 +14,8 @@ import '../../../../core/utils/animations.dart';
 import '../../../../core/utils/dialogs.dart';
 import '../../../../shared/widgets/error_retry.dart';
 import '../../../../shared/widgets/status_chip.dart';
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/widgets/tts_button.dart';
 
 final _myLoadsProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -35,14 +38,29 @@ class MyLoadsScreen extends ConsumerWidget {
         backgroundColor: AppColors.scaffoldBg,
         drawer: const AppDrawer(),
         appBar: AppBar(
-          title: const Text('My Loads'),
-          bottom: const TabBar(
+          title: Text(AppLocalizations.of(context)!.myLoads),
+          actions: [
+            loadsAsync.whenData((loads) {
+              final active = loads.where((l) => ['active','booked','in_transit'].contains(l['status'])).length;
+              final completed = loads.where((l) => ['completed','cancelled','expired'].contains(l['status'])).length;
+              final isHi = ref.watch(localeProvider).languageCode == 'hi';
+              return TtsButton(
+                text: 'Read aloud',
+                spokenText: isHi
+                    ? 'मेरे लोड। $active एक्टिव, $completed पूर्ण।'
+                    : 'My Loads. $active active, $completed completed.',
+                locale: isHi ? 'hi-IN' : 'en-IN',
+                size: 22,
+              );
+            }).valueOrNull ?? const SizedBox.shrink(),
+          ],
+          bottom: TabBar(
             indicatorColor: AppColors.brandTeal,
             labelColor: AppColors.brandTeal,
             unselectedLabelColor: AppColors.textTertiary,
             tabs: [
-              Tab(text: 'Active'),
-              Tab(text: 'History'),
+              Tab(text: AppLocalizations.of(context)!.active),
+              Tab(text: AppLocalizations.of(context)!.completed),
             ],
           ),
         ),
@@ -58,19 +76,20 @@ class MyLoadsScreen extends ConsumerWidget {
           data: (loads) {
             final active = loads
                 .where((l) =>
-                    ['active', 'booked', 'in_transit'].contains(l['status']))
+                    ['active', 'pending_approval', 'booked', 'in_transit'].contains(l['status']))
                 .toList();
             final history = loads
                 .where((l) => ['completed', 'cancelled', 'expired']
                     .contains(l['status']))
                 .toList();
 
+            final l10n = AppLocalizations.of(context)!;
             return TabBarView(
               children: [
-                _buildLoadList(context, ref, active, 'No active loads',
-                    'Post a load to get started'),
-                _buildLoadList(context, ref, history, 'No history',
-                    'Completed loads will appear here'),
+                _buildLoadList(context, ref, active, l10n.noActiveLoads,
+                    l10n.postYourFirstLoad),
+                _buildLoadList(context, ref, history, l10n.noCompletedLoads,
+                    l10n.noCompletedLoads),
               ],
             );
           },
@@ -91,7 +110,7 @@ class MyLoadsScreen extends ConsumerWidget {
         icon: Icons.inventory_2_outlined,
         title: emptyTitle,
         description: emptyDesc,
-        actionLabel: 'Post Load',
+        actionLabel: AppLocalizations.of(context)!.postLoad,
         onAction: () => context.push('/post-load'),
       );
     }
@@ -120,11 +139,12 @@ class _LoadCard extends ConsumerWidget {
   const _LoadCard({required this.load});
 
   Future<void> _deactivateLoad(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await AppDialogs.confirm(
       context,
-      title: 'Deactivate Load',
-      description: 'Are you sure? This load will be removed from search results.',
-      confirmText: 'Deactivate',
+      title: l10n.deactivateLoad,
+      description: l10n.deactivateConfirm,
+      confirmText: l10n.deactivateLoad,
       isDestructive: true,
     );
 
@@ -141,7 +161,7 @@ class _LoadCard extends ConsumerWidget {
       ref.invalidate(_myLoadsProvider);
 
       if (context.mounted) {
-        AppDialogs.showSuccessSnackBar(context, 'Load deactivated');
+        AppDialogs.showSuccessSnackBar(context, l10n.loadDeactivated);
       }
     } catch (e) {
       if (context.mounted) {
@@ -210,25 +230,37 @@ class _LoadCard extends ConsumerWidget {
             const Divider(height: 24),
             Row(
               children: [
-                _actionIcon(context, Icons.chat_bubble_outline, 'Responses',
+                _actionIcon(context, Icons.chat_bubble_outline, AppLocalizations.of(context)!.messages,
                     () => context.push('/messages')),
                 if (!isSuperLoad)
                   _actionIcon(
                       context,
                       Icons.star_outline,
-                      'Make Super',
+                      AppLocalizations.of(context)!.requestSuperLoad,
                       () => context
                           .push('/super-load-request/${load['id']}'))
                 else
                   _actionIcon(
                     context,
                     Icons.auto_awesome,
-                    'View Super Loads',
+                    AppLocalizations.of(context)!.superDashboard,
                     () => context.push('/supplier/super-dashboard'),
                   ),
-                _actionIcon(context, Icons.edit_outlined, 'Edit',
-                    () => context.push('/load-detail/${load['id']}')),
-                _actionIcon(context, Icons.close, 'Deactivate', () {
+                _actionIcon(context, Icons.copy_outlined, 'Post Similar', () {
+                  context.push('/post-load', extra: {
+                    'origin_city': load['origin_city'],
+                    'origin_state': load['origin_state'],
+                    'dest_city': load['dest_city'],
+                    'dest_state': load['dest_state'],
+                    'material': load['material'],
+                    'weight_tonnes': load['weight_tonnes'],
+                    'required_truck_type': load['required_truck_type'],
+                    'price': load['price'],
+                    'price_type': load['price_type'],
+                    'advance_percentage': load['advance_percentage'],
+                  });
+                }),
+                _actionIcon(context, Icons.close, AppLocalizations.of(context)!.deactivateLoad, () {
                   _deactivateLoad(context, ref);
                 }),
               ],
@@ -267,7 +299,7 @@ class _ExpiryCountdown extends StatelessWidget {
       final remaining = expiry.difference(DateTime.now());
 
       if (remaining.isNegative) {
-        return Text('Expired',
+        return Text(AppLocalizations.of(context)!.cancelled,
             style: AppTypography.caption.copyWith(color: AppColors.error));
       }
 

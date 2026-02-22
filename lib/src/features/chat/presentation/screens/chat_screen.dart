@@ -15,7 +15,10 @@ import '../../../../core/constants/app_typography.dart';
 import '../../../../core/providers/auth_service_provider.dart';
 import '../../../../core/models/message_model.dart';
 import '../../../../shared/widgets/app_drawer.dart';
+import '../../../../shared/widgets/map_message_card.dart';
 import '../../../../shared/widgets/voice_message_bubble.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -40,12 +43,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _isTyping = false;
   String? _otherUserTypingName;
   Timer? _typingDebounceTimer;
+  // TECH-3: Pagination
+  static const _pageSize = 50;
+  int _messageOffset = 0;
+  bool _hasMoreMessages = true;
+  bool _isLoadingMore = false;
 
   // WhatsApp UX state
   String? _otherPartyName;
   String? _otherPartyAvatar;
   bool _showScrollToBottom = false;
   int _newMessageCount = 0;
+  Map<String, dynamic>? _loadInfo; // CHAT-B: linked load context
 
   @override
   void initState() {
@@ -60,6 +69,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _loadMessages();
     _subscribeToMessages();
     _subscribeToTyping();
+    _startConnectivityWatch();
   }
 
   @override
@@ -70,6 +80,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _typingChannel?.unsubscribe();
     _recorder.dispose();
     _typingDebounceTimer?.cancel();
+    _connectivitySub?.cancel();
     super.dispose();
   }
 
@@ -79,6 +90,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _scrollController.offset > 200;
     if (show != _showScrollToBottom) {
       setState(() => _showScrollToBottom = show);
+    }
+    // TECH-3: Load more messages when near top
+    if (_scrollController.hasClients &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 100) {
+      _loadMoreMessages();
     }
   }
 
@@ -119,6 +136,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           });
         }
       }
+
+      // CHAT-B: Fetch linked load for context banner
+      final loadId = conv['load_id'] as String?;
+      if (loadId != null) {
+        final load = await db.getLoadById(loadId);
+        if (load != null && mounted) {
+          setState(() => _loadInfo = load);
+        }
+      }
     } catch (_) {}
   }
 
@@ -129,7 +155,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     _typingDebounceTimer?.cancel();
-    _typingDebounceTimer = Timer(const Duration(seconds: 3), () {
+    _typingDebounceTimer = Timer(const Duration(seconds: 5), () {
       if (_isTyping) {
         _isTyping = false;
         _sendTypingEvent(false);
@@ -163,7 +189,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _loadMessages() async {
     try {
       final db = ref.read(databaseServiceProvider);
-      final rawMessages = await db.getMessages(widget.conversationId);
+      final rawMessages = await db.getMessages(
+        widget.conversationId,
+        limit: _pageSize,
+        offset: 0,
+      );
       final messages = rawMessages.map((m) => MessageModel.fromJson(m)).toList();
 
       await _markConversationMessagesAsRead(messages);
@@ -172,12 +202,82 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         setState(() {
           _messages.clear();
           _messages.addAll(messages);
+          _messageOffset = messages.length;
+          _hasMoreMessages = messages.length >= _pageSize;
           _isLoading = false;
         });
+        
+        // V4-017: Auto-send map_card if load is linked and not yet sent
+        _checkAndAutoSendMapCard();
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  // V4-017: Auto-send map_card if load is linked and not yet sent
+  Future<void> _checkAndAutoSendMapCard() async {
+    final userId = ref.read(authServiceProvider).currentUser?.id;
+    if (userId == null || _loadInfo == null) return;
+    
+    // Only supplier should auto-send the map card
+    if (_loadInfo!['supplier_id'] != userId) return;
+
+    // Check if map_card is already in the messages
+    final hasMapCard = _messages.any((m) => m.messageType == 'map_card');
+    if (hasMapCard) return;
+
+    // Send it
+    final db = ref.read(databaseServiceProvider);
+    try {
+      await db.sendMessage(
+        conversationId: widget.conversationId,
+        senderId: userId,
+        type: 'map_card',
+        text: null,
+        payload: {
+          'load_id': _loadInfo!['id'],
+          'origin_city': _loadInfo!['origin_city'],
+          'dest_city': _loadInfo!['dest_city'],
+          'origin_lat': _loadInfo!['origin_lat'],
+          'origin_lng': _loadInfo!['origin_lng'],
+          'dest_lat': _loadInfo!['dest_lat'],
+          'dest_lng': _loadInfo!['dest_lng'],
+          'distance_km': _loadInfo!['distance_km'],
+          'duration_min': _loadInfo!['duration_min'],
+          'diesel_cost': _loadInfo!['diesel_cost'],
+          'toll_cost': _loadInfo!['toll_cost'],
+          'total_cost': _loadInfo!['total_cost'],
+          'material': _loadInfo!['material'],
+          'weight_tonnes': _loadInfo!['weight_tonnes'],
+        },
+      );
+    } catch (_) {}
+  }
+
+  // TECH-3: Load older messages when scrolling to top
+  Future<void> _loadMoreMessages() async {
+    if (_isLoadingMore || !_hasMoreMessages) return;
+    _isLoadingMore = true;
+
+    try {
+      final db = ref.read(databaseServiceProvider);
+      final rawMessages = await db.getMessages(
+        widget.conversationId,
+        limit: _pageSize,
+        offset: _messageOffset,
+      );
+      final older = rawMessages.map((m) => MessageModel.fromJson(m)).toList();
+
+      if (mounted) {
+        setState(() {
+          _messages.insertAll(0, older);
+          _messageOffset += older.length;
+          _hasMoreMessages = older.length >= _pageSize;
+        });
+      }
+    } catch (_) {}
+    _isLoadingMore = false;
   }
 
   void _subscribeToMessages() {
@@ -222,6 +322,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     await db.markAllAsRead(widget.conversationId, currentUserId);
   }
 
+  // CHAT-H: Offline queue — pending messages to retry when online
+  final List<MessageModel> _offlineQueue = [];
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+
+  void _startConnectivityWatch() {
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      final isOnline = results.any((r) => r != ConnectivityResult.none);
+      if (isOnline && _offlineQueue.isNotEmpty) {
+        _flushOfflineQueue();
+      }
+    });
+  }
+
+  Future<void> _flushOfflineQueue() async {
+    final queue = List<MessageModel>.from(_offlineQueue);
+    _offlineQueue.clear();
+    for (final msg in queue) {
+      if (msg.textContent != null) {
+        _messageController.text = msg.textContent!;
+        await _sendMessage();
+      }
+    }
+  }
+
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
@@ -243,6 +367,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
 
     setState(() => _messages.add(optimistic));
+
+    // CHAT-H: Check connectivity before sending
+    final connectivity = await Connectivity().checkConnectivity();
+    final isOffline = connectivity.every((r) => r == ConnectivityResult.none);
+    if (isOffline) {
+      _offlineQueue.add(optimistic);
+      if (mounted) {
+        setState(() {
+          final idx = _messages.indexWhere((m) => m.localId == localId);
+          if (idx != -1) {
+            _messages[idx] = optimistic.copyWith(isOptimistic: true);
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.offlineQueue ??
+                'Messages will be sent when you\'re back online'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
 
     try {
       final db = ref.read(databaseServiceProvider);
@@ -380,20 +527,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final userId = ref.read(authServiceProvider).currentUser!.id;
     final file = File(path);
-    final msgId = const Uuid().v4();
-    final storagePath = '${widget.conversationId}/$msgId.m4a';
+    final localId = const Uuid().v4();
+    final storagePath = '${widget.conversationId}/$localId.m4a';
+
+    // CHAT-F: Optimistic voice message
+    final optimistic = MessageModel(
+      localId: localId,
+      conversationId: widget.conversationId,
+      senderId: userId,
+      messageType: 'voice',
+      voiceDurationSeconds: duration,
+      createdAt: DateTime.now(),
+      isOptimistic: true,
+    );
+    setState(() => _messages.insert(0, optimistic));
 
     try {
-      // Upload to Supabase Storage
       final supabase = Supabase.instance.client;
       await supabase.storage.from('voice-messages').upload(storagePath, file);
+      // CHAT-G: Use 24h signed URL instead of 1h
       final voiceUrl = await supabase.storage
           .from('voice-messages')
-          .createSignedUrl(storagePath, 3600);
+          .createSignedUrl(storagePath, 86400);
 
-      // Send as voice message
       final db = ref.read(databaseServiceProvider);
-      await db.sendMessage(
+      final sent = await db.sendMessage(
         conversationId: widget.conversationId,
         senderId: userId,
         type: 'voice',
@@ -401,10 +559,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         voiceUrl: voiceUrl,
         voiceDurationSeconds: duration,
       );
+
+      // Replace optimistic with server message
+      if (mounted) {
+        setState(() {
+          final idx = _messages.indexWhere((m) => m.localId == localId);
+          if (idx != -1) {
+            _messages[idx] = MessageModel.fromJson(sent).copyWith(localId: localId);
+          }
+        });
+      }
     } catch (_) {
-      // Silently fail — voice upload errors are non-critical
+      // Mark as failed for retry
+      if (mounted) {
+        setState(() {
+          final idx = _messages.indexWhere((m) => m.localId == localId);
+          if (idx != -1) {
+            _messages[idx] = _messages[idx].copyWith(isFailed: true, isOptimistic: false);
+          }
+        });
+      }
     } finally {
-      // Clean up temp file
       try { await file.delete(); } catch (_) {}
     }
   }
@@ -435,106 +610,62 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              Text('Quick Actions', style: AppTypography.h3Subsection),
+              Builder(builder: (_) {
+                final l10n = AppLocalizations.of(context)!;
+                return Text(l10n.chatQuickActions, style: AppTypography.h3Subsection);
+              }),
               const SizedBox(height: 16),
 
-              // ── Trucker-only actions ──
-              if (isTrucker) ...[
-                _AttachOption(
-                  icon: Icons.local_shipping,
-                  label: 'Send Truck Details',
-                  color: AppColors.brandTeal,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _sendTruckCard();
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.price_change_outlined,
-                  label: 'Quote My Rate',
-                  color: AppColors.brandOrange,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _sendQuickAction('My rate for this load is ₹___. Let me know if that works.');
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.check_circle_outline,
-                  label: 'Confirm Availability',
-                  color: AppColors.success,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _sendQuickAction('I am available for this load. Please confirm booking.');
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.description_outlined,
-                  label: 'Share RC',
-                  color: AppColors.warning,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _shareRcDocument();
-                  },
-                ),
-              ],
+              // ── Simplified quick actions (Phase 2E) ──
+              // Booking is now done via load detail screen, not chat.
+              // Chat is for questions only: text + voice + location.
 
-              // ── Supplier-only actions ──
-              if (!isTrucker) ...[
-                _AttachOption(
-                  icon: Icons.request_page_outlined,
-                  label: 'Request RC / Documents',
-                  color: AppColors.info,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _sendQuickAction('Please share your RC book and vehicle documents.');
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.info_outline,
-                  label: 'Ask Truck Details',
-                  color: AppColors.warning,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _sendQuickAction('Can you share your truck details — body type, capacity, and tyres?');
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.price_change_outlined,
-                  label: 'Share Load Rate',
-                  color: AppColors.brandOrange,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _sendQuickAction('The rate for this load is ₹___. Are you interested?');
-                  },
-                ),
-              ],
-
-              // ── Common actions ──
               _AttachOption(
                 icon: Icons.location_on_outlined,
-                label: 'Send Location',
+                label: AppLocalizations.of(context)!.chatSendLocation,
                 color: AppColors.info,
                 onTap: () {
                   Navigator.pop(ctx);
                   _sendLocation();
                 },
               ),
-              _AttachOption(
-                icon: Icons.handshake_outlined,
-                label: 'Accept Deal',
-                color: AppColors.success,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _sendQuickAction('Deal accepted! Let\'s proceed with booking.');
-                },
-              ),
+              if (isTrucker)
+                _AttachOption(
+                  icon: Icons.price_change_outlined,
+                  label: AppLocalizations.of(context)!.chatQuoteRate,
+                  color: AppColors.brandOrange,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _sendQuickAction(AppLocalizations.of(context)!.chatQuoteRateMsg);
+                  },
+                ),
+              if (isTrucker)
+                _AttachOption(
+                  icon: Icons.check_circle_outline,
+                  label: AppLocalizations.of(context)!.chatConfirmAvailability,
+                  color: AppColors.success,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _sendQuickAction(AppLocalizations.of(context)!.chatConfirmAvailabilityMsg);
+                  },
+                ),
+              if (!isTrucker)
+                _AttachOption(
+                  icon: Icons.info_outline,
+                  label: AppLocalizations.of(context)!.chatAskTruckDetails,
+                  color: AppColors.warning,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _sendQuickAction(AppLocalizations.of(context)!.chatAskTruckDetailsMsg);
+                  },
+                ),
               _AttachOption(
                 icon: Icons.price_change_outlined,
-                label: 'Negotiate Price',
+                label: AppLocalizations.of(context)!.chatNegotiatePrice,
                 color: AppColors.brandTeal,
                 onTap: () {
                   Navigator.pop(ctx);
-                  _sendQuickAction('Can we discuss the price? What\'s your best rate?');
+                  _sendQuickAction(AppLocalizations.of(context)!.chatNegotiatePriceMsg);
                 },
               ),
             ],
@@ -542,90 +673,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _sendTruckCard() async {
-    final userId = ref.read(authServiceProvider).currentUser!.id;
-    final db = ref.read(databaseServiceProvider);
-
-    try {
-      final trucks = await db.getMyTrucks(userId);
-      if (trucks.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No trucks added yet. Add a truck first.')),
-          );
-        }
-        return;
-      }
-
-      // If only one truck, send it directly; otherwise show picker
-      if (trucks.length == 1) {
-        await _sendTruckMessage(trucks.first);
-      } else {
-        if (!mounted) return;
-        _showTruckPicker(trucks);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading trucks: $e')),
-        );
-      }
-    }
-  }
-
-  void _showTruckPicker(List<Map<String, dynamic>> trucks) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Select Truck', style: AppTypography.h3Subsection),
-              const SizedBox(height: 12),
-              ...trucks.map((truck) => ListTile(
-                leading: const Icon(Icons.local_shipping, color: AppColors.brandTeal),
-                title: Text(truck['vehicle_number'] as String? ?? 'Truck'),
-                subtitle: Text(
-                  '${truck['body_type'] ?? '-'} • ${truck['tyres'] ?? '-'} tyres • ${truck['capacity_tonnes'] ?? '-'}T',
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _sendTruckMessage(truck);
-                },
-              )),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _sendTruckMessage(Map<String, dynamic> truck) async {
-    final userId = ref.read(authServiceProvider).currentUser!.id;
-    final db = ref.read(databaseServiceProvider);
-
-    try {
-      await db.sendMessage(
-        conversationId: widget.conversationId,
-        senderId: userId,
-        type: 'truck_card',
-        text: null,
-        payload: {
-          'vehicle_number': truck['vehicle_number'],
-          'body_type': truck['body_type'],
-          'tyres': truck['tyres'],
-          'capacity_tonnes': truck['capacity_tonnes'],
-        },
-      );
-    } catch (_) {}
   }
 
   Future<void> _sendQuickAction(String text) async {
@@ -686,139 +733,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  Future<void> _shareRcDocument() async {
-    final userId = ref.read(authServiceProvider).currentUser!.id;
-    final db = ref.read(databaseServiceProvider);
-
-    try {
-      // Get trucker's trucks
-      final trucks = await db.getMyTrucks(userId);
-      if (trucks.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No trucks added yet. Add a truck first.')),
-          );
-        }
-        return;
-      }
-
-      // Filter verified trucks with RC documents
-      final verifiedTrucks = trucks.where((t) {
-        final status = t['status'] as String?;
-        final rcUrl = t['rc_photo_url'] as String?;
-        return status == 'verified' && rcUrl != null && rcUrl.isNotEmpty;
-      }).toList();
-
-      if (verifiedTrucks.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No verified trucks with RC documents found.')),
-          );
-        }
-        return;
-      }
-
-      // If only one truck, share directly; otherwise show picker
-      if (verifiedTrucks.length == 1) {
-        await _sendRcMessage(verifiedTrucks.first);
-      } else {
-        if (!mounted) return;
-        _showRcTruckPicker(verifiedTrucks);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading trucks: $e')),
-        );
-      }
-    }
-  }
-
-  void _showRcTruckPicker(List<Map<String, dynamic>> trucks) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Select Truck to Share RC', style: AppTypography.h3Subsection),
-              const SizedBox(height: 12),
-              ...trucks.map((truck) => ListTile(
-                leading: const Icon(Icons.description, color: AppColors.warning),
-                title: Text(truck['vehicle_number'] as String? ?? 'Truck'),
-                subtitle: Text(
-                  '${truck['body_type'] ?? '-'} • ${truck['tyres'] ?? '-'} tyres',
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _sendRcMessage(truck);
-                },
-              )),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _sendRcMessage(Map<String, dynamic> truck) async {
-    final rcPath = truck['rc_photo_url'] as String?;
-    if (rcPath == null || rcPath.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('RC document not available for this truck.')),
-        );
-      }
-      return;
-    }
-
-    final userId = ref.read(authServiceProvider).currentUser!.id;
-    final db = ref.read(databaseServiceProvider);
-    final storage = Supabase.instance.client.storage;
-
-    try {
-      // Generate signed URL for RC document
-      final String signedUrl = await storage
-          .from('truck-images')
-          .createSignedUrl(rcPath, 3600); // 1 hour expiry
-
-      // Send as document message
-      await db.sendMessage(
-        conversationId: widget.conversationId,
-        senderId: userId,
-        type: 'document',
-        text: 'RC for ${truck['vehicle_number']}',
-        payload: {
-          'document_type': 'rc_book',
-          'vehicle_number': truck['vehicle_number'],
-          'body_type': truck['body_type'],
-          'capacity_tonnes': truck['capacity_tonnes'],
-          'file_name': 'RC_${truck['vehicle_number']}.jpg',
-          'signed_url': signedUrl,
-          'expires_at': DateTime.now().add(const Duration(hours: 1)).toIso8601String(),
-        },
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('RC shared successfully')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sharing RC: $e')),
-        );
-      }
-    }
-  }
-
   // ─── INPUT BAR WIDGET ───
 
   Widget _buildInputBar() {
@@ -828,7 +742,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         color: AppColors.cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -980,7 +894,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 2,
             ),
           ],
@@ -1057,6 +971,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           Column(
             children: [
+              // CHAT-B: Load context banner
+              if (_loadInfo != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.brandTealLight,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.brandTeal.withOpacity(0.20),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.inventory_2,
+                          size: 16, color: AppColors.brandTeal),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${_loadInfo!['origin_city']} → ${_loadInfo!['dest_city']}  •  '
+                          '${_loadInfo!['material'] ?? '-'}  •  '
+                          '₹${_loadInfo!['price'] ?? '-'}/ton',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.brandTeal,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               // Messages
               Expanded(
                 child: _isLoading
@@ -1090,9 +1037,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 key: ValueKey(msg.id ?? 'opt_$index'),
                                 message: msg,
                                 isMine: isMine,
-                                onRetry: msg.isFailed
-                                    ? () => _retryMessage(msg)
-                                    : null,
+                                viewerRole: ref.read(userRoleProvider).valueOrNull ?? 'trucker',
+                                onRetry: msg.isFailed ? () => _retryMessage(msg) : null,
+                                onAcceptDeal: null,
+                                onRejectDeal: null,
                               );
 
                               // Date header (shown ABOVE the first message of each day)
@@ -1132,7 +1080,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
+                        color: Colors.black.withOpacity(0.15),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -1178,12 +1126,18 @@ class _MessageBubble extends StatelessWidget {
   final MessageModel message;
   final bool isMine;
   final VoidCallback? onRetry;
+  final void Function(Map<String, dynamic>)? onAcceptDeal;
+  final void Function(Map<String, dynamic>)? onRejectDeal;
+  final String viewerRole;
 
   const _MessageBubble({
     super.key,
     required this.message,
     required this.isMine,
     this.onRetry,
+    this.onAcceptDeal,
+    this.onRejectDeal,
+    required this.viewerRole,
   });
 
   @override
@@ -1228,7 +1182,7 @@ class _MessageBubble extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -1237,7 +1191,7 @@ class _MessageBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            _buildContent(),
+            _buildContent(context),
             const SizedBox(height: 4),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -1247,7 +1201,7 @@ class _MessageBubble extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     color: isMine
-                        ? Colors.white.withValues(alpha: 0.70)
+                        ? Colors.white.withOpacity(0.70)
                         : AppColors.textTertiary,
                   ),
                 ),
@@ -1264,7 +1218,7 @@ class _MessageBubble extends StatelessWidget {
                     child: CircularProgressIndicator(
                       strokeWidth: 1.5,
                       color: isMine
-                          ? Colors.white.withValues(alpha: 0.50)
+                          ? Colors.white.withOpacity(0.50)
                           : AppColors.textTertiary,
                     ),
                   ),
@@ -1300,17 +1254,27 @@ class _MessageBubble extends StatelessWidget {
       return Icon(
         Icons.done,
         size: 14,
-        color: Colors.white.withValues(alpha: 0.60),
+        color: Colors.white.withOpacity(0.60),
       );
     }
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     switch (message.messageType) {
       case 'truck_card':
-        return _buildTruckCard();
+        return _buildTruckCard(context);
+      case 'load_card':
+        return _buildLoadCard();
+      case 'deal_proposal':
+        return _buildDealProposal(context);
       case 'location':
         return _buildLocation();
+      case 'map_card':
+        return MapMessageCard(
+          payload: message.payload ?? {},
+          isMine: isMine,
+          viewerRole: viewerRole,
+        );
       case 'document':
         return _buildDocument();
       case 'voice':
@@ -1318,6 +1282,7 @@ class _MessageBubble extends StatelessWidget {
           voiceUrl: message.voiceUrl ?? '',
           durationSeconds: message.voiceDurationSeconds ?? 0,
           isMine: isMine,
+          isUploading: message.isOptimistic,
         );
       default:
         return Text(
@@ -1330,43 +1295,368 @@ class _MessageBubble extends StatelessWidget {
     }
   }
 
-  Widget _buildTruckCard() {
+  Widget _buildTruckCard(BuildContext context) {
     final payload = message.payload ?? {};
+    return GestureDetector(
+      onTap: () => _showTruckDetails(context, payload),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isMine
+              ? Colors.white.withOpacity(0.15)
+              : AppColors.brandTealLight,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.local_shipping,
+                    size: 16,
+                    color: isMine ? Colors.white : AppColors.brandTeal),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    payload['vehicle_number'] as String? ?? 'Truck',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isMine ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Icon(Icons.open_in_new, size: 12,
+                    color: isMine
+                        ? Colors.white.withOpacity(0.60)
+                        : AppColors.textTertiary),
+              ],
+            ),
+            if (payload['body_type'] != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                '${payload['body_type']} • ${payload['tyres'] ?? '-'} tyres',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isMine
+                      ? Colors.white.withOpacity(0.80)
+                      : AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTruckDetails(BuildContext context, Map<String, dynamic> p) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.local_shipping,
+                      color: AppColors.brandTeal, size: 24),
+                  const SizedBox(width: 10),
+                  Text(
+                    p['vehicle_number'] as String? ?? 'Truck',
+                    style: AppTypography.h3Subsection,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (p['body_type'] != null)
+                _detailRow('Body Type', p['body_type'].toString()),
+              if (p['tyres'] != null)
+                _detailRow('Tyres', '${p['tyres']} wheeler'),
+              if (p['capacity_tonnes'] != null)
+                _detailRow('Capacity', '${p['capacity_tonnes']} tonnes'),
+              if (p['length_ft'] != null)
+                _detailRow('Length', '${p['length_ft']} ft'),
+              if (p['owner_name'] != null)
+                _detailRow('Owner', p['owner_name'].toString()),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(label,
+                style: AppTypography.caption
+                    .copyWith(color: AppColors.textSecondary)),
+          ),
+          Expanded(
+            child: Text(value, style: AppTypography.bodyMedium),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadCard() {
+    final p = message.payload ?? {};
+    final textColor = isMine ? Colors.white : AppColors.textPrimary;
+    final subtextColor = isMine
+        ? Colors.white.withOpacity(0.80)
+        : AppColors.textSecondary;
+
     return Container(
+      width: 240,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: isMine
-            ? Colors.white.withValues(alpha: 0.15)
+            ? Colors.white.withOpacity(0.15)
             : AppColors.brandTealLight,
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isMine
+              ? Colors.white.withOpacity(0.25)
+              : AppColors.brandTeal.withOpacity(0.30),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Icon(Icons.inventory_2,
+                  size: 16, color: isMine ? Colors.white : AppColors.brandTeal),
+              const SizedBox(width: 6),
+              Text('Load Details',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: textColor,
+                  )),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Route
+          Text(
+            '${p['origin_city'] ?? '?'} → ${p['dest_city'] ?? '?'}',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Material + Weight
+          Text(
+            '${p['material'] ?? '-'} • ${p['weight_tonnes'] ?? '-'} tonnes',
+            style: TextStyle(fontSize: 13, color: subtextColor),
+          ),
+          const SizedBox(height: 2),
+          // Price
+          Row(
+            children: [
+              Text(
+                '₹${p['price'] ?? '-'}/ton',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: textColor,
+                ),
+              ),
+              if (p['price_type'] != null) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: isMine
+                        ? Colors.white.withOpacity(0.20)
+                        : AppColors.scaffoldBg,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    (p['price_type'] as String).toUpperCase(),
+                    style: TextStyle(fontSize: 10, color: subtextColor),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          // Truck type + pickup
+          if (p['required_truck_type'] != null || p['pickup_date'] != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              [
+                if (p['required_truck_type'] != null)
+                  '🚛 ${p['required_truck_type']}',
+                if (p['pickup_date'] != null) '📅 ${p['pickup_date']}',
+              ].join(' • '),
+              style: TextStyle(fontSize: 12, color: subtextColor),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDealProposal(BuildContext context) {
+    final p = message.payload ?? {};
+    final isPending = p['status'] == 'pending';
+    final showActions = !isMine && isPending;
+
+    return Container(
+      width: 250,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isMine
+            ? Colors.white.withOpacity(0.15)
+            : AppColors.successLight,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppColors.success.withOpacity(0.40),
+          width: 1.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.local_shipping,
-                  size: 16,
-                  color: isMine ? Colors.white : AppColors.brandTeal),
+              Icon(Icons.handshake, size: 18,
+                  color: isMine ? Colors.white : AppColors.success),
               const SizedBox(width: 6),
-              Text(
-                payload['vehicle_number'] as String? ?? 'Truck',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: isMine ? Colors.white : AppColors.textPrimary,
-                ),
-              ),
+              Text('Deal Proposal',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: isMine ? Colors.white : AppColors.success,
+                  )),
             ],
           ),
-          if (payload['body_type'] != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              '${payload['body_type']} • ${payload['tyres'] ?? '-'} tyres',
-              style: TextStyle(
-                fontSize: 13,
-                color: isMine
-                    ? Colors.white.withValues(alpha: 0.80)
-                    : AppColors.textSecondary,
+          const SizedBox(height: 8),
+          Text(
+            '${p['origin_city'] ?? '?'} → ${p['dest_city'] ?? '?'}',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: isMine ? Colors.white : AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${p['material'] ?? '-'} • ${p['weight_tonnes'] ?? '-'} tonnes',
+            style: TextStyle(
+              fontSize: 12,
+              color: isMine
+                  ? Colors.white.withOpacity(0.80)
+                  : AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isMine
+                  ? Colors.white.withOpacity(0.10)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Price',
+                        style: TextStyle(fontSize: 10,
+                            color: isMine
+                            ? Colors.white.withOpacity(0.60)
+                            : AppColors.textTertiary)),
+                    Text('₹${p['proposed_price'] ?? '-'}/ton',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: isMine ? Colors.white : AppColors.textPrimary,
+                        )),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Advance',
+                        style: TextStyle(fontSize: 10,
+                            color: isMine
+                            ? Colors.white.withOpacity(0.60)
+                            : AppColors.textTertiary)),
+                    Text('${p['advance_percentage'] ?? '-'}%',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: isMine ? Colors.white : AppColors.textPrimary,
+                        )),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (showActions) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => onRejectDeal?.call(p),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      minimumSize: const Size(0, 32),
+                    ),
+                    child: const Text('Reject', style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => onAcceptDeal?.call(p),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      minimumSize: const Size(0, 32),
+                    ),
+                    child: const Text('Accept', style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (!isPending) ...[
+            const SizedBox(height: 6),
+            Center(
+              child: Text(
+                p['status'] == 'accepted' ? '✅ Deal Accepted' : '❌ Declined',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: p['status'] == 'accepted'
+                      ? AppColors.success
+                      : AppColors.error,
+                ),
               ),
             ),
           ],
@@ -1384,7 +1674,7 @@ class _MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: isMine
-            ? Colors.white.withValues(alpha: 0.15)
+            ? Colors.white.withOpacity(0.15)
             : AppColors.infoLight,
         borderRadius: BorderRadius.circular(8),
       ),
@@ -1443,7 +1733,7 @@ class _MessageBubble extends StatelessWidget {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: isMine
-              ? Colors.white.withValues(alpha: 0.15)
+              ? Colors.white.withOpacity(0.15)
               : AppColors.warningLight,
           borderRadius: BorderRadius.circular(8),
         ),
@@ -1473,7 +1763,7 @@ class _MessageBubble extends StatelessWidget {
                       'Tap to view',
                       style: TextStyle(
                         color: isMine
-                            ? Colors.white.withValues(alpha: 0.70)
+                            ? Colors.white.withOpacity(0.70)
                             : AppColors.textSecondary,
                         fontSize: 11,
                       ),
@@ -1523,7 +1813,7 @@ class _AttachOption extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
+          color: color.withOpacity(0.12),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: color, size: 20),

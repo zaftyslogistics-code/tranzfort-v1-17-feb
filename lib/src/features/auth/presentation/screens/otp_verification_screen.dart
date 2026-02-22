@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -83,7 +84,7 @@ class _OtpVerificationScreenState
       } else if (role == 'supplier') {
         context.go('/supplier-dashboard');
       } else {
-        context.go('/find-loads');
+        context.go('/trucker-dashboard');
       }
     } catch (e) {
       if (mounted) {
@@ -99,7 +100,7 @@ class _OtpVerificationScreenState
       await ref.read(authServiceProvider).signInWithOtp(mobile: widget.mobile);
       _startTimer();
       if (mounted) {
-        AppDialogs.showSuccessSnackBar(context, 'OTP resent');
+        AppDialogs.showSuccessSnackBar(context, AppLocalizations.of(context)!.otpSent);
       }
     } catch (e) {
       if (mounted) {
@@ -112,7 +113,7 @@ class _OtpVerificationScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
-      appBar: AppBar(title: const Text('Verify OTP')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.verifyOtp)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -122,10 +123,10 @@ class _OtpVerificationScreenState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 32),
-              Text('Enter OTP', style: AppTypography.h2Section),
+              Text(AppLocalizations.of(context)!.enterOtp, style: AppTypography.h2Section),
               const SizedBox(height: 8),
               Text(
-                'We sent a 6-digit code to ${widget.mobile}',
+                '${AppLocalizations.of(context)!.otpSent} ${widget.mobile}',
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.textSecondary),
               ),
@@ -164,7 +165,7 @@ class _OtpVerificationScreenState
               ),
               const SizedBox(height: 32),
               GradientButton(
-                text: 'Verify',
+                text: AppLocalizations.of(context)!.verify,
                 isLoading: _isLoading,
                 onPressed: _otp.length == 6 && !_isLoading
                     ? _handleVerify
@@ -174,13 +175,13 @@ class _OtpVerificationScreenState
               Center(
                 child: _resendTimer > 0
                     ? Text(
-                        'Resend OTP in ${_resendTimer}s',
+                        '${AppLocalizations.of(context)!.resendOtp} ${_resendTimer}s',
                         style: AppTypography.bodyMedium
                             .copyWith(color: AppColors.textTertiary),
                       )
                     : TextButton(
                         onPressed: _handleResend,
-                        child: const Text('Resend OTP'),
+                        child: Text(AppLocalizations.of(context)!.resendOtp),
                       ),
               ),
             ],

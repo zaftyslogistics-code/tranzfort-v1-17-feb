@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_typography.dart';
@@ -72,9 +74,35 @@ class AppDialogs {
     );
   }
 
+  /// Maps common exception types to friendly user-facing messages.
+  static String errorToUserMessage(dynamic error) {
+    if (error is SocketException) {
+      return 'No internet. Check your connection.';
+    }
+    if (error is TimeoutException) {
+      return 'Request timed out. Try again.';
+    }
+    final msg = error.toString();
+    if (msg.contains('AuthException') || msg.contains('auth/')) {
+      return 'Login failed. Check your details.';
+    }
+    if (msg.contains('PostgrestException') ||
+        msg.contains('PGRST') ||
+        msg.contains('supabase')) {
+      return 'Something went wrong. Try again.';
+    }
+    if (msg.contains('SocketException') || msg.contains('Failed host lookup')) {
+      return 'No internet. Check your connection.';
+    }
+    // Strip technical prefixes for anything else
+    return msg
+        .replaceAll('Exception: ', '')
+        .replaceAll('Error: ', '')
+        .trim();
+  }
+
   static void showErrorSnackBar(BuildContext context, dynamic error) {
-    final message = error.toString().replaceAll('Exception: ', '');
-    showSnackBar(context, message, isError: true);
+    showSnackBar(context, errorToUserMessage(error), isError: true);
   }
 
   static void showSuccessSnackBar(BuildContext context, String message) {

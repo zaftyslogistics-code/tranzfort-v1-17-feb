@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/providers/auth_service_provider.dart';
+import '../../features/bot/providers/bot_provider.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final profileAsync = ref.watch(userProfileProvider);
     final roleAsync = ref.watch(userRoleProvider);
 
@@ -26,15 +29,26 @@ class AppDrawer extends ConsumerWidget {
       width: AppSpacing.drawerWidth,
       child: Column(
         children: [
-          _buildHeader(userName, avatarUrl, role, verificationStatus),
+          _buildHeader(context, userName, avatarUrl, role, verificationStatus),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
                 _buildMenuItem(
                   context,
+                  icon: Icons.home_outlined,
+                  label: l10n.dashboard,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go(role == 'supplier'
+                        ? '/supplier-dashboard'
+                        : '/trucker-dashboard');
+                  },
+                ),
+                _buildMenuItem(
+                  context,
                   icon: Icons.person_outline,
-                  label: 'My Profile',
+                  label: l10n.profile,
                   onTap: () {
                     Navigator.pop(context);
                     context.push(role == 'supplier'
@@ -45,7 +59,7 @@ class AppDrawer extends ConsumerWidget {
                 _buildMenuItem(
                   context,
                   icon: Icons.verified_user_outlined,
-                  label: 'Verification',
+                  label: l10n.verification,
                   onTap: () {
                     Navigator.pop(context);
                     context.push(role == 'supplier'
@@ -55,8 +69,17 @@ class AppDrawer extends ConsumerWidget {
                 ),
                 _buildMenuItem(
                   context,
+                  icon: Icons.smart_toy_outlined,
+                  label: l10n.botTitle,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/bot-chat');
+                  },
+                ),
+                _buildMenuItem(
+                  context,
                   icon: Icons.settings_outlined,
-                  label: 'Settings',
+                  label: l10n.settings,
                   onTap: () {
                     Navigator.pop(context);
                     context.push('/settings');
@@ -65,7 +88,7 @@ class AppDrawer extends ConsumerWidget {
                 _buildMenuItem(
                   context,
                   icon: Icons.help_outline,
-                  label: 'Help & Support',
+                  label: l10n.helpSupport,
                   onTap: () {
                     Navigator.pop(context);
                     context.push('/help-support');
@@ -75,13 +98,13 @@ class AppDrawer extends ConsumerWidget {
                 _buildMenuItem(
                   context,
                   icon: Icons.swap_horiz,
-                  label: 'Switch Role',
+                  label: l10n.switchRole,
                   onTap: () => _showSwitchRoleDialog(context, ref, role),
                 ),
                 _buildMenuItem(
                   context,
                   icon: Icons.logout,
-                  label: 'Logout',
+                  label: l10n.logout,
                   isDestructive: true,
                   onTap: () => _showLogoutDialog(context, ref),
                 ),
@@ -94,11 +117,13 @@ class AppDrawer extends ConsumerWidget {
   }
 
   Widget _buildHeader(
+    BuildContext context,
     String name,
     String? avatarUrl,
     String role,
     String verificationStatus,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
 
     return DrawerHeader(
@@ -149,17 +174,17 @@ class AppDrawer extends ConsumerWidget {
                 Row(
                   children: [
                     _buildPill(
-                      role == 'supplier' ? 'Supplier' : 'Trucker',
+                      role == 'supplier' ? l10n.supplier : l10n.trucker,
                       Colors.white.withValues(alpha: 0.20),
                       Colors.white,
                     ),
                     const SizedBox(width: 6),
                     _buildPill(
                       verificationStatus == 'verified'
-                          ? 'Verified'
+                          ? l10n.verified
                           : verificationStatus == 'pending'
-                              ? 'Pending'
-                              : 'Unverified',
+                              ? l10n.pending
+                              : l10n.verification,
                       verificationStatus == 'verified'
                           ? AppColors.success.withValues(alpha: 0.30)
                           : verificationStatus == 'pending'
@@ -224,20 +249,23 @@ class AppDrawer extends ConsumerWidget {
   }
 
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: Text(l10n.logout),
+        content: Text(l10n.logoutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () async {
               // Invalidate BEFORE signOut (while ref is alive)
               invalidateAllUserProviders(ref);
+              // A8-FIX: Clear bot state so next user doesn't see previous user's conversation
+              ref.read(botServiceProvider).resetAllConversations();
               Navigator.pop(ctx);
               final authService = ref.read(authServiceProvider);
               await authService.signOut();
@@ -245,7 +273,7 @@ class AppDrawer extends ConsumerWidget {
                 context.go('/login');
               }
             },
-            child: const Text('Logout', style: TextStyle(color: AppColors.error)),
+            child: Text(l10n.logout, style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -254,17 +282,19 @@ class AppDrawer extends ConsumerWidget {
 
   void _showSwitchRoleDialog(
       BuildContext context, WidgetRef ref, String currentRole) {
+    final l10n = AppLocalizations.of(context)!;
     final newRole = currentRole == 'supplier' ? 'trucker' : 'supplier';
+    final newRoleLabel = newRole == 'supplier' ? l10n.supplier : l10n.trucker;
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Switch Role'),
-        content: Text('Switch to ${newRole == 'supplier' ? 'Supplier' : 'Trucker'}?'),
+        title: Text(l10n.switchRole),
+        content: Text('${l10n.switchRole}: $newRoleLabel?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () async {
@@ -277,7 +307,7 @@ class AppDrawer extends ConsumerWidget {
                 context.go('/login');
               }
             },
-            child: const Text('Switch'),
+            child: Text(l10n.switchRole),
           ),
         ],
       ),

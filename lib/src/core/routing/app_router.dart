@@ -6,8 +6,10 @@ import '../utils/animations.dart';
 
 // Screen imports
 import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/bot/presentation/screens/bot_chat_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
+import '../../features/auth/presentation/screens/google_complete_registration_screen.dart';
 import '../../features/auth/presentation/screens/otp_verification_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/role_selection_screen.dart';
@@ -20,6 +22,7 @@ import '../../features/supplier/presentation/screens/super_dashboard_screen.dart
 import '../../features/supplier/presentation/screens/supplier_verification_screen.dart';
 import '../../features/supplier/presentation/screens/supplier_profile_screen.dart';
 import '../../features/supplier/presentation/screens/payout_profile_screen.dart';
+import '../../features/trucker/presentation/screens/trucker_dashboard_screen.dart';
 import '../../features/trucker/presentation/screens/find_loads_screen.dart';
 import '../../features/trucker/presentation/screens/my_fleet_screen.dart';
 import '../../features/trucker/presentation/screens/add_truck_screen.dart';
@@ -27,11 +30,22 @@ import '../../features/trucker/presentation/screens/my_trips_screen.dart';
 import '../../features/trucker/presentation/screens/trucker_verification_screen.dart';
 import '../../features/trucker/presentation/screens/trucker_profile_screen.dart';
 import '../../features/chat/presentation/screens/chat_list_screen.dart';
+import '../../features/shared/presentation/screens/onboarding_screen.dart';
+import '../../features/navigation/presentation/screens/navigation_home_screen.dart';
+import '../../features/navigation/presentation/screens/route_preview_screen.dart';
+import '../../features/navigation/presentation/screens/active_navigation_screen.dart';
+import '../../features/navigation/presentation/screens/live_tracking_screen.dart';
+import '../../features/navigation/presentation/screens/saved_places_screen.dart';
+import '../../features/navigation/presentation/screens/add_place_screen.dart';
+import '../../features/navigation/presentation/screens/navigation_history_screen.dart';
+import '../../features/navigation/models/route_model.dart';
 import '../../features/chat/presentation/screens/chat_screen.dart';
 import '../../features/shared/presentation/screens/settings_screen.dart';
+import '../../features/bot/presentation/screens/ai_settings_screen.dart';
 import '../../features/shared/presentation/screens/help_support_screen.dart';
 import '../../features/shared/presentation/screens/my_tickets_screen.dart';
 import '../../features/shared/presentation/screens/ticket_detail_screen.dart';
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
 
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(this._ref) {
@@ -63,6 +77,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         '/signup',
         '/otp-verification',
         '/forgot-password',
+        '/onboarding',
+        '/google-complete-registration',
+        '/role-selection',
       ];
 
       // Don't redirect away from auth screens when authenticated
@@ -97,6 +114,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ];
 
       const truckerOnlyPaths = [
+        '/trucker-dashboard',
         '/find-loads',
         '/my-fleet',
         '/add-truck',
@@ -109,7 +127,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/supplier-dashboard';
       }
       if (role == 'trucker' && supplierOnlyPaths.contains(currentPath)) {
-        return '/find-loads';
+        return '/trucker-dashboard';
       }
 
       // Verification gate: suppliers must be verified to access post-load.
@@ -132,6 +150,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        pageBuilder: (context, state) => fadeSlideTransitionPage(
+          key: state.pageKey,
+          child: const OnboardingScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/login',
         name: 'login',
         pageBuilder: (context, state) => fadeSlideTransitionPage(
@@ -145,6 +171,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => fadeSlideTransitionPage(
           key: state.pageKey,
           child: const SignupScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/google-complete-registration',
+        pageBuilder: (context, state) => fadeSlideTransitionPage(
+          key: state.pageKey,
+          child: const GoogleCompleteRegistrationScreen(),
         ),
       ),
       GoRoute(
@@ -189,8 +222,25 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'post-load',
         pageBuilder: (context, state) => fadeSlideTransitionPage(
           key: state.pageKey,
-          child: const PostLoadScreen(),
+          child: PostLoadScreen(
+            prefill: state.extra as Map<String, dynamic>?,
+          ),
         ),
+      ),
+      GoRoute(
+        path: '/edit-load/:loadId',
+        name: 'edit-load',
+        pageBuilder: (context, state) {
+          final loadId = state.pathParameters['loadId']!;
+          final prefill = state.extra as Map<String, dynamic>?;
+          return fadeSlideTransitionPage(
+            key: state.pageKey,
+            child: PostLoadScreen(
+              editLoadId: loadId,
+              prefill: prefill,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/my-loads',
@@ -257,12 +307,41 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // ─── TRUCKER ROUTES ───
       GoRoute(
-        path: '/find-loads',
-        name: 'find-loads',
+        path: '/trucker-dashboard',
+        name: 'trucker-dashboard',
         pageBuilder: (context, state) => fadeSlideTransitionPage(
           key: state.pageKey,
-          child: const FindLoadsScreen(),
+          child: const TruckerDashboardScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/find-loads',
+        name: 'find-loads',
+        pageBuilder: (context, state) {
+          String? initialOrigin;
+          String? initialDestination;
+          bool autoSearch = false;
+
+          final extra = state.extra;
+          if (extra is Map<String, dynamic>) {
+            initialOrigin = extra['origin'] as String?;
+            initialDestination = extra['destination'] as String?;
+            autoSearch = extra['autoSearch'] == true;
+          } else if (extra is Map) {
+            initialOrigin = extra['origin']?.toString();
+            initialDestination = extra['destination']?.toString();
+            autoSearch = extra['autoSearch'] == true;
+          }
+
+          return fadeSlideTransitionPage(
+            key: state.pageKey,
+            child: FindLoadsScreen(
+              initialOrigin: initialOrigin,
+              initialDestination: initialDestination,
+              autoSearch: autoSearch,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/my-fleet',
@@ -326,6 +405,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // ─── NOTIFICATIONS ───
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        pageBuilder: (context, state) => fadeSlideTransitionPage(
+          key: state.pageKey,
+          child: const NotificationsScreen(),
+        ),
+      ),
+
+      // ─── BOT ROUTE ───
+      GoRoute(
+        path: '/bot-chat',
+        name: 'bot-chat',
+        pageBuilder: (context, state) => fadeSlideTransitionPage(
+          key: state.pageKey,
+          child: const BotChatScreen(),
+        ),
+      ),
+
       // ─── SHARED ROUTES ───
       GoRoute(
         path: '/settings',
@@ -333,6 +432,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => fadeSlideTransitionPage(
           key: state.pageKey,
           child: const SettingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/ai-settings',
+        name: 'ai-settings',
+        pageBuilder: (context, state) => fadeSlideTransitionPage(
+          key: state.pageKey,
+          child: const AiSettingsScreen(),
         ),
       ),
       GoRoute(
@@ -359,6 +466,119 @@ final routerProvider = Provider<GoRouter>((ref) {
           return fadeSlideTransitionPage(
             key: state.pageKey,
             child: TicketDetailScreen(ticketId: ticketId),
+          );
+        },
+      ),
+      // ─── NAVIGATION ROUTES ───
+      GoRoute(
+        path: '/navigation',
+        name: 'navigation',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final qp = state.uri.queryParameters;
+          return fadeSlideTransitionPage(
+            key: state.pageKey,
+            child: NavigationHomeScreen(
+              originCity: extra?['origin'] as String? ?? qp['origin'],
+              destCity: extra?['destination'] as String? ?? qp['destination'],
+              originLat: extra?['originLat'] as double?,
+              originLng: extra?['originLng'] as double?,
+              destLat: extra?['destLat'] as double?,
+              destLng: extra?['destLng'] as double?,
+              tripId: extra?['tripId'] as String?,
+              loadContext: extra?['loadContext'] as String?,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/navigation/preview',
+        name: 'navigation-preview',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return fadeSlideTransitionPage(
+            key: state.pageKey,
+            child: RoutePreviewScreen(
+              originLat: extra['originLat'] as double,
+              originLng: extra['originLng'] as double,
+              destLat: extra['destLat'] as double,
+              destLng: extra['destLng'] as double,
+              originCity: extra['originCity'] as String,
+              destCity: extra['destCity'] as String,
+              loadContext: extra['loadContext'] as String?,
+              tripId: extra['tripId'] as String?,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/navigation/active',
+        name: 'navigation-active',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return fadeSlideTransitionPage(
+            key: state.pageKey,
+            child: ActiveNavigationScreen(
+              route: extra['route'] as RouteModel,
+              originCity: extra['originCity'] as String,
+              destCity: extra['destCity'] as String,
+              originLat: extra['originLat'] as double,
+              originLng: extra['originLng'] as double,
+              destLat: extra['destLat'] as double,
+              destLng: extra['destLng'] as double,
+              tripId: extra['tripId'] as String?,
+              loadContext: extra['loadContext'] as String?,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/navigation/saved-places',
+        name: 'saved-places',
+        pageBuilder: (context, state) {
+          return fadeSlideTransitionPage(
+            key: state.pageKey,
+            child: const SavedPlacesScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/navigation/add-place',
+        name: 'add-place',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return fadeSlideTransitionPage(
+            key: state.pageKey,
+            child: AddPlaceScreen(
+              initialLat: extra?['lat'] as double?,
+              initialLng: extra?['lng'] as double?,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/navigation/history',
+        name: 'navigation-history',
+        pageBuilder: (context, state) {
+          return fadeSlideTransitionPage(
+            key: state.pageKey,
+            child: const NavigationHistoryScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/navigation/live-tracking/:loadId',
+        name: 'live-tracking',
+        pageBuilder: (context, state) {
+          final loadId = state.pathParameters['loadId']!;
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return fadeSlideTransitionPage(
+            key: state.pageKey,
+            child: LiveTrackingScreen(
+              loadId: loadId,
+              originCity: extra['originCity'] as String? ?? '',
+              destCity: extra['destCity'] as String? ?? '',
+            ),
           );
         },
       ),

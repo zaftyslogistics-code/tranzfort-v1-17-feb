@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 
 class BottomNavBar extends StatelessWidget {
   final String currentRole;
@@ -8,7 +9,10 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = currentRole == 'supplier' ? _supplierItems : _truckerItems;
+    final l10n = AppLocalizations.of(context)!;
+    final items = currentRole == 'supplier'
+        ? _getSupplierItems(l10n)
+        : _getTruckerItems(l10n);
     final currentPath = GoRouterState.of(context).matchedLocation;
     final currentIndex = _getActiveIndex(items, currentPath);
 
@@ -37,22 +41,19 @@ class BottomNavBar extends StatelessWidget {
     return 0;
   }
 
-  static const _supplierItems = [
-    _NavItem('Home', Icons.home_outlined, Icons.home, '/supplier-dashboard'),
-    _NavItem(
-        'My Loads', Icons.inventory_2_outlined, Icons.inventory_2, '/my-loads'),
-    _NavItem('Super', Icons.star_outline, Icons.star,
+  static List<_NavItem> _getSupplierItems(AppLocalizations l10n) => [
+    _NavItem(l10n.dashboard, Icons.home_outlined, Icons.home, '/supplier-dashboard'),
+    _NavItem(l10n.myLoads, Icons.inventory_2_outlined, Icons.inventory_2, '/my-loads'),
+    _NavItem(l10n.superDashboard, Icons.star_outline, Icons.star,
         '/supplier/super-dashboard'),
-    _NavItem('Chat', Icons.chat_bubble_outline, Icons.chat_bubble, '/messages'),
+    _NavItem(l10n.messages, Icons.chat_bubble_outline, Icons.chat_bubble, '/messages'),
   ];
 
-  static const _truckerItems = [
-    _NavItem('Home', Icons.search_outlined, Icons.search, '/find-loads'),
-    _NavItem(
-        'My Trips', Icons.assignment_outlined, Icons.assignment, '/my-trips'),
-    _NavItem(
-        'Fleet', Icons.local_shipping_outlined, Icons.local_shipping, '/my-fleet'),
-    _NavItem('Chat', Icons.chat_bubble_outline, Icons.chat_bubble, '/messages'),
+  static List<_NavItem> _getTruckerItems(AppLocalizations l10n) => [
+    _NavItem(l10n.dashboard, Icons.home_outlined, Icons.home, '/trucker-dashboard'),
+    _NavItem(l10n.findLoads, Icons.search_outlined, Icons.search, '/find-loads'),
+    _NavItem(l10n.myTrips, Icons.assignment_outlined, Icons.assignment, '/my-trips'),
+    _NavItem(l10n.messages, Icons.chat_bubble_outline, Icons.chat_bubble, '/messages'),
   ];
 }
 

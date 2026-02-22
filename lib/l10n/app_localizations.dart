@@ -122,6 +122,18 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get logout;
 
+  /// No description provided for @continueWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogle;
+
+  /// No description provided for @or.
+  ///
+  /// In en, this message translates to:
+  /// **'Or'**
+  String get or;
+
   /// No description provided for @email.
   ///
   /// In en, this message translates to:
@@ -524,6 +536,24 @@ abstract class AppLocalizations {
   /// **'Verify OTP'**
   String get verifyOtp;
 
+  /// No description provided for @otpSent.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP sent'**
+  String get otpSent;
+
+  /// No description provided for @verify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verify;
+
+  /// No description provided for @upload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get upload;
+
   /// No description provided for @otpExpired.
   ///
   /// In en, this message translates to:
@@ -725,7 +755,7 @@ abstract class AppLocalizations {
   /// No description provided for @noCompletedLoads.
   ///
   /// In en, this message translates to:
-  /// **'No completed loads'**
+  /// **'No completed loads yet'**
   String get noCompletedLoads;
 
   /// No description provided for @quickActions.
@@ -859,6 +889,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fixed Price'**
   String get fixedPrice;
+
+  /// No description provided for @paymentTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'80% Advance on Loading, 20% on Delivery'**
+  String get paymentTerms;
 
   /// No description provided for @pickupDateHint.
   ///
@@ -1211,7 +1247,7 @@ abstract class AppLocalizations {
   /// No description provided for @noTrucksYet.
   ///
   /// In en, this message translates to:
-  /// **'No trucks added yet'**
+  /// **'No trucks yet'**
   String get noTrucksYet;
 
   /// No description provided for @addYourFirstTruck.
@@ -1423,6 +1459,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rate Supplier'**
   String get rateSupplier;
+
+  /// No description provided for @ratingPoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor'**
+  String get ratingPoor;
+
+  /// No description provided for @ratingFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get ratingFair;
+
+  /// No description provided for @ratingGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get ratingGood;
+
+  /// No description provided for @ratingVeryGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Very Good'**
+  String get ratingVeryGood;
+
+  /// No description provided for @ratingExcellent.
+  ///
+  /// In en, this message translates to:
+  /// **'Excellent'**
+  String get ratingExcellent;
+
+  /// No description provided for @submitRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Rating'**
+  String get submitRating;
+
+  /// No description provided for @addComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a comment (optional)'**
+  String get addComment;
+
+  /// No description provided for @alreadyRated.
+  ///
+  /// In en, this message translates to:
+  /// **'You have already rated this trip'**
+  String get alreadyRated;
+
+  /// No description provided for @ratingSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating submitted!'**
+  String get ratingSubmitted;
 
   /// No description provided for @tripStarted.
   ///
@@ -1928,6 +2018,12 @@ abstract class AppLocalizations {
   /// **'Version'**
   String get version;
 
+  /// No description provided for @appVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'App Version'**
+  String get appVersion;
+
   /// No description provided for @help.
   ///
   /// In en, this message translates to:
@@ -2084,70 +2180,148 @@ abstract class AppLocalizations {
   /// **'Minimum length required'**
   String get minLengthRequired;
 
+  /// No description provided for @resetPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email and we will send a reset link.'**
+  String get resetPasswordSubtitle;
+
+  /// No description provided for @enterValidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email'**
+  String get enterValidEmail;
+
+  /// No description provided for @resetLinkSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset link sent. Check your inbox.'**
+  String get resetLinkSent;
+
+  /// No description provided for @drivingLicenceNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Driving Licence Number'**
+  String get drivingLicenceNumber;
+
+  /// No description provided for @documentPhotoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Take clear photos of your documents. All information must be clearly visible.'**
+  String get documentPhotoHint;
+
+  /// No description provided for @aadhaarFront.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Front'**
+  String get aadhaarFront;
+
+  /// No description provided for @aadhaarBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Back'**
+  String get aadhaarBack;
+
+  /// No description provided for @panCard.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Card'**
+  String get panCard;
+
+  /// No description provided for @rcFront.
+  ///
+  /// In en, this message translates to:
+  /// **'RC Front'**
+  String get rcFront;
+
+  /// No description provided for @rcBack.
+  ///
+  /// In en, this message translates to:
+  /// **'RC Back'**
+  String get rcBack;
+
+  /// No description provided for @truckPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck Photo'**
+  String get truckPhoto;
+
   /// No description provided for @botTitle.
   ///
   /// In en, this message translates to:
-  /// **'TranZfort Assistant'**
+  /// **'Nancy - Transport Helper'**
   String get botTitle;
 
   /// No description provided for @botGreeting.
   ///
   /// In en, this message translates to:
-  /// **'Hi! I\'m your TranZfort assistant. How can I help?'**
+  /// **'Hi! I\'m Nancy, your TranZfort helper. Post a load or find loads. What do you need?'**
   String get botGreeting;
 
   /// No description provided for @botTyping.
   ///
   /// In en, this message translates to:
-  /// **'Assistant is typing...'**
+  /// **'Nancy is typing...'**
   String get botTyping;
 
   /// No description provided for @botHelpOptions.
   ///
   /// In en, this message translates to:
-  /// **'I can help you:\n• Post a new load\n• Find loads\n• Answer questions'**
+  /// **'I can help you post a load, find loads, or answer questions.'**
   String get botHelpOptions;
 
   /// No description provided for @botDidntUnderstand.
   ///
   /// In en, this message translates to:
-  /// **'I didn\'t understand. Could you rephrase?'**
+  /// **'Didn\'t get that. What do you need?'**
   String get botDidntUnderstand;
 
   /// No description provided for @botAskOrigin.
   ///
   /// In en, this message translates to:
-  /// **'Where are you shipping from? (Origin city)'**
+  /// **'Where from? Type a city or pick one below.'**
   String get botAskOrigin;
 
   /// No description provided for @botAskDestination.
   ///
   /// In en, this message translates to:
-  /// **'Where are you shipping to? (Destination city)'**
+  /// **'Where to? Type a city or pick one.'**
   String get botAskDestination;
 
   /// No description provided for @botAskMaterial.
   ///
   /// In en, this message translates to:
-  /// **'What material are you shipping?'**
+  /// **'What\'s the cargo? Type or pick below.'**
   String get botAskMaterial;
 
   /// No description provided for @botAskWeight.
   ///
   /// In en, this message translates to:
-  /// **'What\'s the weight? (in tonnes)'**
+  /// **'How many tonnes? Type or pick below.'**
   String get botAskWeight;
 
   /// No description provided for @botAskTruckType.
   ///
   /// In en, this message translates to:
-  /// **'What type of truck do you need?'**
+  /// **'What truck type?'**
   String get botAskTruckType;
+
+  /// No description provided for @botAskPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate per tonne? Type or pick.'**
+  String get botAskPrice;
+
+  /// No description provided for @botAskPickupDate.
+  ///
+  /// In en, this message translates to:
+  /// **'When to pick up?'**
+  String get botAskPickupDate;
 
   /// No description provided for @botConfirmDetails.
   ///
   /// In en, this message translates to:
-  /// **'Please confirm:\n📍 {origin} → {destination}\n📦 {material}\n⚖️ {weight} tonnes\n\nIs this correct?'**
+  /// **'Ready to post: {origin} to {destination}. {material}. {weight} tonnes. Post it?'**
   String botConfirmDetails(
     String origin,
     String destination,
@@ -2158,13 +2332,13 @@ abstract class AppLocalizations {
   /// No description provided for @botLoadPosted.
   ///
   /// In en, this message translates to:
-  /// **'✅ Load posted successfully!\nLoad ID: {loadId}'**
+  /// **'Load posted. Load ID: {loadId}'**
   String botLoadPosted(String loadId);
 
   /// No description provided for @botSearchingLoads.
   ///
   /// In en, this message translates to:
-  /// **'🔍 Searching for loads...'**
+  /// **'Searching for loads...'**
   String get botSearchingLoads;
 
   /// No description provided for @botFoundLoads.
@@ -2182,19 +2356,43 @@ abstract class AppLocalizations {
   /// No description provided for @botThanks.
   ///
   /// In en, this message translates to:
-  /// **'Thank you for using TranZfort! 👍'**
+  /// **'Thanks for using TranZfort! Anything else?'**
   String get botThanks;
+
+  /// No description provided for @botHelpPostLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'To post a load, go to Dashboard and tap Post Load. Fill in the city, cargo, weight, and price. Or just tell me and I\'ll do it.'**
+  String get botHelpPostLoad;
+
+  /// No description provided for @botHelpVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'To verify your account, go to Profile and tap Verification. Upload your Aadhaar, PAN, and business documents. We review within 24 hours.'**
+  String get botHelpVerify;
+
+  /// No description provided for @botHelpPricing.
+  ///
+  /// In en, this message translates to:
+  /// **'TranZfort is free. No commission on loads. Super Loads have a small fee.'**
+  String get botHelpPricing;
+
+  /// No description provided for @botHelpSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Need help? Email support@tranzfort.com or call 1800-XXX-XXXX. Or tell me your problem.'**
+  String get botHelpSupport;
 
   /// No description provided for @botDownloadAi.
   ///
   /// In en, this message translates to:
-  /// **'Download AI'**
+  /// **'AI Assistant coming soon'**
   String get botDownloadAi;
 
   /// No description provided for @botDownloadAiDescription.
   ///
   /// In en, this message translates to:
-  /// **'Get smarter responses and better Hindi understanding'**
+  /// **'Smarter responses and better Hindi understanding'**
   String get botDownloadAiDescription;
 
   /// No description provided for @botAiModelSize.
@@ -2652,6 +2850,816 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refrigerated'**
   String get truckTypeRefrigerated;
+
+  /// No description provided for @chatQuickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Actions'**
+  String get chatQuickActions;
+
+  /// No description provided for @chatSendTruckDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Truck Details'**
+  String get chatSendTruckDetails;
+
+  /// No description provided for @chatQuoteRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote My Rate'**
+  String get chatQuoteRate;
+
+  /// No description provided for @chatQuoteRateMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'My rate for this load is ₹___. Let me know if that works.'**
+  String get chatQuoteRateMsg;
+
+  /// No description provided for @chatConfirmAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Availability'**
+  String get chatConfirmAvailability;
+
+  /// No description provided for @chatConfirmAvailabilityMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'I am available for this load. Please confirm booking.'**
+  String get chatConfirmAvailabilityMsg;
+
+  /// No description provided for @chatShareRc.
+  ///
+  /// In en, this message translates to:
+  /// **'Share RC'**
+  String get chatShareRc;
+
+  /// No description provided for @chatShareLoadDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Load Details'**
+  String get chatShareLoadDetails;
+
+  /// No description provided for @chatRequestDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Request RC / Documents'**
+  String get chatRequestDocuments;
+
+  /// No description provided for @chatRequestDocumentsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Please share your RC book and vehicle documents.'**
+  String get chatRequestDocumentsMsg;
+
+  /// No description provided for @chatAskTruckDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Truck Details'**
+  String get chatAskTruckDetails;
+
+  /// No description provided for @chatAskTruckDetailsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Can you share your truck details — body type, capacity, and tyres?'**
+  String get chatAskTruckDetailsMsg;
+
+  /// No description provided for @chatShareLoadRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Load Rate'**
+  String get chatShareLoadRate;
+
+  /// No description provided for @chatShareLoadRateMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'The rate for this load is ₹___. Are you interested?'**
+  String get chatShareLoadRateMsg;
+
+  /// No description provided for @chatSendLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Location'**
+  String get chatSendLocation;
+
+  /// No description provided for @chatProposeDeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Propose Deal'**
+  String get chatProposeDeal;
+
+  /// No description provided for @chatNegotiatePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Negotiate Price'**
+  String get chatNegotiatePrice;
+
+  /// No description provided for @chatNegotiatePriceMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Can we discuss the price? What\'s your best rate?'**
+  String get chatNegotiatePriceMsg;
+
+  /// No description provided for @chatDealProposal.
+  ///
+  /// In en, this message translates to:
+  /// **'Deal Proposal'**
+  String get chatDealProposal;
+
+  /// No description provided for @chatDealAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deal Accepted'**
+  String get chatDealAccepted;
+
+  /// No description provided for @chatDealDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get chatDealDeclined;
+
+  /// No description provided for @chatAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get chatAccept;
+
+  /// No description provided for @chatReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get chatReject;
+
+  /// No description provided for @postSimilar.
+  ///
+  /// In en, this message translates to:
+  /// **'Post Similar'**
+  String get postSimilar;
+
+  /// No description provided for @truckMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck Match'**
+  String get truckMatch;
+
+  /// No description provided for @viewMyLoads.
+  ///
+  /// In en, this message translates to:
+  /// **'View My Loads'**
+  String get viewMyLoads;
+
+  /// No description provided for @advance.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance'**
+  String get advance;
+
+  /// No description provided for @onLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'on loading'**
+  String get onLoading;
+
+  /// No description provided for @additional.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional'**
+  String get additional;
+
+  /// No description provided for @notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notes;
+
+  /// No description provided for @savedLoads.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Loads'**
+  String get savedLoads;
+
+  /// No description provided for @noSavedLoads.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved loads yet'**
+  String get noSavedLoads;
+
+  /// No description provided for @loadBookmarked.
+  ///
+  /// In en, this message translates to:
+  /// **'Load saved'**
+  String get loadBookmarked;
+
+  /// No description provided for @loadUnbookmarked.
+  ///
+  /// In en, this message translates to:
+  /// **'Load removed from saved'**
+  String get loadUnbookmarked;
+
+  /// No description provided for @fleetManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet Management'**
+  String get fleetManagement;
+
+  /// No description provided for @manageFleet.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your fleet of trucks'**
+  String get manageFleet;
+
+  /// No description provided for @offlineQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages will be sent when you\'re back online'**
+  String get offlineQueue;
+
+  /// No description provided for @messageQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Message queued for sending'**
+  String get messageQueued;
+
+  /// No description provided for @saveDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get saveDraft;
+
+  /// No description provided for @helpAndSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Help and Support'**
+  String get helpAndSupport;
+
+  /// No description provided for @pleaseAllFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill all fields'**
+  String get pleaseAllFields;
+
+  /// No description provided for @supportTicketSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Support ticket submitted!'**
+  String get supportTicketSubmitted;
+
+  /// No description provided for @bookedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Booked by'**
+  String get bookedBy;
+
+  /// No description provided for @routeAndGoods.
+  ///
+  /// In en, this message translates to:
+  /// **'Route and Goods'**
+  String get routeAndGoods;
+
+  /// No description provided for @truckRequirements.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck Requirements'**
+  String get truckRequirements;
+
+  /// No description provided for @pricingSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing and Schedule'**
+  String get pricingSchedule;
+
+  /// No description provided for @advancePercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance: {percent}%'**
+  String advancePercent(int percent);
+
+  /// No description provided for @viewMyLoadsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View My Loads'**
+  String get viewMyLoadsButton;
+
+  /// No description provided for @noCompletedTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed trips yet'**
+  String get noCompletedTrips;
+
+  /// No description provided for @camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get camera;
+
+  /// No description provided for @gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get gallery;
+
+  /// No description provided for @aadhaarFrontLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Front'**
+  String get aadhaarFrontLabel;
+
+  /// No description provided for @aadhaarBackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Back'**
+  String get aadhaarBackLabel;
+
+  /// No description provided for @panCardLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Card'**
+  String get panCardLabel;
+
+  /// No description provided for @dlFrontLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Driving Licence Front'**
+  String get dlFrontLabel;
+
+  /// No description provided for @dlBackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Driving Licence Back'**
+  String get dlBackLabel;
+
+  /// No description provided for @businessLicenceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Licence'**
+  String get businessLicenceLabel;
+
+  /// No description provided for @gstCertificateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'GST Certificate'**
+  String get gstCertificateLabel;
+
+  /// No description provided for @takePhotoOrGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo or choose from gallery'**
+  String get takePhotoOrGallery;
+
+  /// No description provided for @uploadDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload {documentName}'**
+  String uploadDocument(String documentName);
+
+  /// No description provided for @lrUploadPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload the Lorry Receipt photo before marking In Transit.'**
+  String get lrUploadPrompt;
+
+  /// No description provided for @podUploadPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload the Proof of Delivery photo to complete this trip.'**
+  String get podUploadPrompt;
+
+  /// No description provided for @podUploadPromptSuper.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload the Proof of Delivery photo. Admin will review before marking completed.'**
+  String get podUploadPromptSuper;
+
+  /// No description provided for @lorryReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Lorry Receipt'**
+  String get lorryReceipt;
+
+  /// No description provided for @proofOfDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Proof of Delivery'**
+  String get proofOfDelivery;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get takePhoto;
+
+  /// No description provided for @stageNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Started'**
+  String get stageNotStarted;
+
+  /// No description provided for @stageReachedPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Reached Pickup'**
+  String get stageReachedPickup;
+
+  /// No description provided for @stageLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get stageLoading;
+
+  /// No description provided for @stageInTransit.
+  ///
+  /// In en, this message translates to:
+  /// **'In Transit'**
+  String get stageInTransit;
+
+  /// No description provided for @stageReachedDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Reached Destination'**
+  String get stageReachedDestination;
+
+  /// No description provided for @stageUnloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Unloading'**
+  String get stageUnloading;
+
+  /// No description provided for @stageDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get stageDelivered;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get onboardingGetStarted;
+
+  /// No description provided for @companySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get companySection;
+
+  /// No description provided for @contactSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get contactSection;
+
+  /// No description provided for @fleetSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet'**
+  String get fleetSection;
+
+  /// No description provided for @companyNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Company Name'**
+  String get companyNameLabel;
+
+  /// No description provided for @gstNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'GST Number'**
+  String get gstNumberLabel;
+
+  /// No description provided for @typingIndicator.
+  ///
+  /// In en, this message translates to:
+  /// **'Typing...'**
+  String get typingIndicator;
+
+  /// No description provided for @navNavigate.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate'**
+  String get navNavigate;
+
+  /// No description provided for @navFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'FROM'**
+  String get navFrom;
+
+  /// No description provided for @navTo.
+  ///
+  /// In en, this message translates to:
+  /// **'TO'**
+  String get navTo;
+
+  /// No description provided for @navOriginHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Origin city or address'**
+  String get navOriginHint;
+
+  /// No description provided for @navDestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination city or address'**
+  String get navDestHint;
+
+  /// No description provided for @navMyLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'My Location'**
+  String get navMyLocation;
+
+  /// No description provided for @navCurrentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Location'**
+  String get navCurrentLocation;
+
+  /// No description provided for @navFindRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Route'**
+  String get navFindRoute;
+
+  /// No description provided for @navRecentDestinations.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Destinations'**
+  String get navRecentDestinations;
+
+  /// No description provided for @navSavedPlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Places'**
+  String get navSavedPlaces;
+
+  /// No description provided for @navAddPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a Place'**
+  String get navAddPlace;
+
+  /// No description provided for @navQuickTips.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Tips'**
+  String get navQuickTips;
+
+  /// No description provided for @navTipMyLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap \"My Location\" to auto-detect your origin'**
+  String get navTipMyLocation;
+
+  /// No description provided for @navTipSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap origin and destination for return trips'**
+  String get navTipSwap;
+
+  /// No description provided for @navTipLoadAware.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate from My Trips for load-aware routing'**
+  String get navTipLoadAware;
+
+  /// No description provided for @navRoutePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Route Preview'**
+  String get navRoutePreview;
+
+  /// No description provided for @navStartNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Navigation'**
+  String get navStartNavigation;
+
+  /// No description provided for @navDieselCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Diesel'**
+  String get navDieselCost;
+
+  /// No description provided for @navTollCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Tolls'**
+  String get navTollCost;
+
+  /// No description provided for @navTotalCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get navTotalCost;
+
+  /// No description provided for @navEstimatedCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated Trip Cost'**
+  String get navEstimatedCost;
+
+  /// No description provided for @navNoRouteFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No route found between these locations'**
+  String get navNoRouteFound;
+
+  /// No description provided for @navCalculatingRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating route...'**
+  String get navCalculatingRoute;
+
+  /// No description provided for @navRerouting.
+  ///
+  /// In en, this message translates to:
+  /// **'Rerouting...'**
+  String get navRerouting;
+
+  /// No description provided for @navArrived.
+  ///
+  /// In en, this message translates to:
+  /// **'You have arrived!'**
+  String get navArrived;
+
+  /// No description provided for @navArrivedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'You have arrived at {city}'**
+  String navArrivedAt(String city);
+
+  /// No description provided for @navStopNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Navigation?'**
+  String get navStopNavigation;
+
+  /// No description provided for @navStopConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to stop navigating?'**
+  String get navStopConfirm;
+
+  /// No description provided for @navContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get navContinue;
+
+  /// No description provided for @navStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get navStop;
+
+  /// No description provided for @navMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get navMute;
+
+  /// No description provided for @navUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get navUnmute;
+
+  /// No description provided for @navRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get navRepeat;
+
+  /// No description provided for @navReroute.
+  ///
+  /// In en, this message translates to:
+  /// **'Reroute'**
+  String get navReroute;
+
+  /// No description provided for @navSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps'**
+  String get navSteps;
+
+  /// No description provided for @navAllSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'All Steps'**
+  String get navAllSteps;
+
+  /// No description provided for @navGpsDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS is disabled. Please enable location services.'**
+  String get navGpsDisabled;
+
+  /// No description provided for @navPermDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission denied.'**
+  String get navPermDenied;
+
+  /// No description provided for @navPermDeniedForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission permanently denied. Enable in Settings.'**
+  String get navPermDeniedForever;
+
+  /// No description provided for @navGpsError.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS error: {error}'**
+  String navGpsError(String error);
+
+  /// No description provided for @navSelectOrigin.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an origin location'**
+  String get navSelectOrigin;
+
+  /// No description provided for @navSelectDest.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a destination'**
+  String get navSelectDest;
+
+  /// No description provided for @navTrackingActive.
+  ///
+  /// In en, this message translates to:
+  /// **'TranZfort Navigation active'**
+  String get navTrackingActive;
+
+  /// No description provided for @navTrackingBg.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking your trip in the background'**
+  String get navTrackingBg;
+
+  /// No description provided for @navTrackingPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking paused — stopped'**
+  String get navTrackingPaused;
+
+  /// No description provided for @navDeletePlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Place'**
+  String get navDeletePlace;
+
+  /// No description provided for @navDeletePlaceConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{label}\"?'**
+  String navDeletePlaceConfirm(String label);
+
+  /// No description provided for @navNoSavedPlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved places yet'**
+  String get navNoSavedPlaces;
+
+  /// No description provided for @navAddPlaceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + to add your home, depot, or favorite stops'**
+  String get navAddPlaceHint;
+
+  /// No description provided for @navPlaceSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Place saved!'**
+  String get navPlaceSaved;
+
+  /// No description provided for @navPlaceDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Place deleted'**
+  String get navPlaceDeleted;
+
+  /// No description provided for @navDistanceRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km remaining'**
+  String navDistanceRemaining(String km);
+
+  /// No description provided for @navViewRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'View Route'**
+  String get navViewRoute;
 }
 
 class _AppLocalizationsDelegate

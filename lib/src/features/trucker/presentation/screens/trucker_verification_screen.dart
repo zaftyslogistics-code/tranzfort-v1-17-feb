@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -12,6 +13,8 @@ import '../../../../core/utils/dialogs.dart';
 import '../../../../shared/widgets/app_drawer.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../../../../shared/widgets/status_chip.dart';
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/widgets/tts_button.dart';
 
 class TruckerVerificationScreen extends ConsumerStatefulWidget {
   const TruckerVerificationScreen({super.key});
@@ -67,10 +70,32 @@ class _TruckerVerificationScreenState
   }
 
   Future<File?> _pickDocumentPhoto(String documentName) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: Text(AppLocalizations.of(ctx)!.camera),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: Text(AppLocalizations.of(ctx)!.gallery),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return null;
+
     try {
       final picker = ImagePicker();
       final picked = await picker.pickImage(
-        source: ImageSource.camera,
+        source: source,
         maxWidth: 1920,
         maxHeight: 1080,
         imageQuality: 85,
@@ -92,15 +117,15 @@ class _TruckerVerificationScreenState
 
     // Validate required documents
     if (_aadhaarFrontPhoto == null || _aadhaarBackPhoto == null) {
-      AppDialogs.showErrorSnackBar(context, 'Aadhaar front and back photos are required');
+      AppDialogs.showErrorSnackBar(context, AppLocalizations.of(context)!.requiredField);
       return;
     }
     if (_panPhoto == null) {
-      AppDialogs.showErrorSnackBar(context, 'PAN photo is required');
+      AppDialogs.showErrorSnackBar(context, AppLocalizations.of(context)!.requiredField);
       return;
     }
     if (_dlFrontPhoto == null || _dlBackPhoto == null) {
-      AppDialogs.showErrorSnackBar(context, 'Driving Licence front and back photos are required');
+      AppDialogs.showErrorSnackBar(context, AppLocalizations.of(context)!.requiredField);
       return;
     }
 
@@ -165,7 +190,7 @@ class _TruckerVerificationScreenState
       ref.invalidate(userProfileProvider);
 
       if (mounted) {
-        AppDialogs.showSuccessSnackBar(context, 'Verification submitted! We\'ll review within 24 hours.');
+        AppDialogs.showSuccessSnackBar(context, AppLocalizations.of(context)!.pending);
       }
     } catch (e) {
       if (mounted) {
@@ -199,18 +224,21 @@ class _TruckerVerificationScreenState
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isUploaded
-                    ? AppColors.success.withValues(alpha: 0.1)
-                    : AppColors.brandTealLight,
-                borderRadius: BorderRadius.circular(8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: isUploaded
+                    ? Image.file(photo, fit: BoxFit.cover)
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.brandTealLight,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(icon, color: AppColors.brandTeal),
+                      ),
               ),
-              child: isUploaded
-                  ? const Icon(Icons.check_circle, color: AppColors.success)
-                  : Icon(icon, color: AppColors.brandTeal),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -246,7 +274,7 @@ class _TruckerVerificationScreenState
                 ),
               )
             else
-              const Icon(Icons.camera_alt, color: AppColors.textSecondary),
+              const Icon(Icons.add_a_photo, color: AppColors.textSecondary),
           ],
         ),
       ),
@@ -264,8 +292,16 @@ class _TruckerVerificationScreenState
       backgroundColor: AppColors.scaffoldBg,
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Verification'),
+        title: Text(AppLocalizations.of(context)!.verification),
         actions: [
+          TtsButton(
+            text: 'Read aloud',
+            spokenText: ref.watch(localeProvider).languageCode == 'hi'
+                ? 'अकाउंट वेरिफिकेशन। आधार, PAN कार्ड और ड्राइविंग लाइसेंस अपलोड करें। 24 घंटे में समीक्षा होगी।'
+                : 'Account Verification. Upload your Aadhaar, PAN card, and driving licence. We will review within 24 hours.',
+            locale: ref.watch(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-IN',
+            size: 22,
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: StatusChip(status: verificationStatus),
@@ -296,7 +332,7 @@ class _TruckerVerificationScreenState
                 ),
               ),
 
-            Text('Personal Documents', style: AppTypography.h3Subsection),
+            Text(AppLocalizations.of(context)!.verification, style: AppTypography.h3Subsection),
             const SizedBox(height: 12),
             TextFormField(
               controller: _aadhaarController,
@@ -335,7 +371,7 @@ class _TruckerVerificationScreenState
             const SizedBox(height: 24),
 
             const SizedBox(height: 24),
-            Text('Document Photos (Required)', style: AppTypography.h3Subsection),
+            Text(AppLocalizations.of(context)!.upload, style: AppTypography.h3Subsection),
             const SizedBox(height: 8),
             Text(
               'Take clear photos of your documents. All information must be clearly visible.',
@@ -400,8 +436,8 @@ class _TruckerVerificationScreenState
 
             GradientButton(
               text: verificationStatus == 'pending'
-                  ? 'Resubmit Verification'
-                  : 'Submit Verification',
+                  ? AppLocalizations.of(context)!.submit
+                  : AppLocalizations.of(context)!.submit,
               isLoading: _isLoading,
               onPressed: _isLoading ? null : _handleSubmit,
             ),

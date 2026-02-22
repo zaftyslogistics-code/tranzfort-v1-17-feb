@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -9,10 +12,13 @@ import '../../../../core/utils/animations.dart';
 import '../../../../core/utils/dialogs.dart';
 import '../../../../shared/widgets/app_drawer.dart';
 import '../../../../shared/widgets/bottom_nav_bar.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_retry.dart';
 import '../../../../shared/widgets/skeleton_loader.dart';
 import '../../../../shared/widgets/status_chip.dart';
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/widgets/tts_button.dart';
 
 final _myTripsProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -34,14 +40,29 @@ class MyTripsScreen extends ConsumerWidget {
         backgroundColor: AppColors.scaffoldBg,
         drawer: const AppDrawer(),
         appBar: AppBar(
-          title: const Text('My Trips'),
-          bottom: const TabBar(
+          title: Text(AppLocalizations.of(context)!.myTrips),
+          actions: [
+            tripsAsync.whenData((trips) {
+              final active = trips.where((t) => ['booked','in_transit'].contains(t['status'])).length;
+              final completed = trips.where((t) => t['status'] == 'completed').length;
+              final isHi = ref.watch(localeProvider).languageCode == 'hi';
+              return TtsButton(
+                text: 'Read aloud',
+                spokenText: isHi
+                    ? 'मेरी ट्रिप। $active एक्टिव, $completed पूर्ण।'
+                    : 'My Trips. $active active, $completed completed.',
+                locale: isHi ? 'hi-IN' : 'en-IN',
+                size: 22,
+              );
+            }).valueOrNull ?? const SizedBox.shrink(),
+          ],
+          bottom: TabBar(
             indicatorColor: AppColors.brandTeal,
             labelColor: AppColors.brandTeal,
             unselectedLabelColor: AppColors.textTertiary,
             tabs: [
-              Tab(text: 'Active'),
-              Tab(text: 'Completed'),
+              Tab(text: AppLocalizations.of(context)!.active),
+              Tab(text: AppLocalizations.of(context)!.completed),
             ],
           ),
         ),
@@ -67,14 +88,14 @@ class MyTripsScreen extends ConsumerWidget {
               children: [
                 _TripList(
                   trips: active,
-                  emptyTitle: 'No active trips',
-                  emptyDesc: 'Accepted loads will appear here',
+                  emptyTitle: AppLocalizations.of(context)!.noActiveTrips,
+                  emptyDesc: AppLocalizations.of(context)!.noActiveTrips,
                   onRefresh: () => ref.invalidate(_myTripsProvider),
                 ),
                 _TripList(
                   trips: completed,
-                  emptyTitle: 'No completed trips',
-                  emptyDesc: 'Delivered loads will appear here',
+                  emptyTitle: AppLocalizations.of(context)!.noTripHistory,
+                  emptyDesc: AppLocalizations.of(context)!.noCompletedTrips,
                   onRefresh: () => ref.invalidate(_myTripsProvider),
                 ),
               ],
@@ -139,15 +160,17 @@ const _tripStages = [
   'delivered',
 ];
 
-const _stageLabels = {
-  'not_started': 'Not Started',
-  'reached_pickup': 'Reached Pickup',
-  'loading': 'Loading',
-  'in_transit': 'In Transit',
-  'reached_destination': 'Reached Destination',
-  'unloading': 'Unloading',
-  'delivered': 'Delivered',
-};
+Map<String, String> _getStageLabels(AppLocalizations l10n) {
+  return {
+    'not_started': l10n.stageNotStarted,
+    'reached_pickup': l10n.stageReachedPickup,
+    'loading': l10n.stageLoading,
+    'in_transit': l10n.stageInTransit,
+    'reached_destination': l10n.stageReachedDestination,
+    'unloading': l10n.stageUnloading,
+    'delivered': l10n.stageDelivered,
+  };
+}
 
 const _stageIcons = {
   'not_started': Icons.schedule,
@@ -171,11 +194,14 @@ class _TripCard extends ConsumerStatefulWidget {
 
 class _TripCardState extends ConsumerState<_TripCard> {
   bool _isUpdating = false;
+  final _picker = ImagePicker();
 
   String get _currentStage =>
       widget.trip['trip_stage'] as String? ?? 'not_started';
 
   int get _currentIndex => _tripStages.indexOf(_currentStage);
+
+  bool get _isSuperLoad => widget.trip['is_super_load'] == true;
 
   String? get _nextStage {
     final idx = _currentIndex;
@@ -183,10 +209,48 @@ class _TripCardState extends ConsumerState<_TripCard> {
     return _tripStages[idx + 1];
   }
 
-  Future<void> _advanceStage() async {
+  /// Check if the next stage requires a document upload gate.
+  bool get _nextStageRequiresUpload {
+    final next = _nextStage;
+    // Gate 1: loading → in_transit requires LR (Lorry Receipt)
+    if (_currentStage == 'loading' && next == 'in_transit') return true;
+    // Gate 2: unloading → delivered requires POD (Proof of Delivery)
+    if (_currentStage == 'unloading' && next == 'delivered') return true;
+    return false;
+  }
+
+  String _getRequiredDocLabel(AppLocalizations l10n) {
+    if (_currentStage == 'loading') return 'Lorry Receipt (LR / Bilty)';
+    if (_currentStage == 'unloading') return 'Proof of Delivery (POD)';
+    return '';
+  }
+
+  String get _requiredDocColumn {
+    if (_currentStage == 'loading') return 'lr_photo_url';
+    if (_currentStage == 'unloading') return 'pod_photo_url';
+    return '';
+  }
+
+  Future<void> _advanceStage(AppLocalizations l10n) async {
     final next = _nextStage;
     if (next == null) return;
 
+    // If this transition requires a document upload, show the upload gate
+    if (_nextStageRequiresUpload) {
+      final alreadyUploaded =
+          (widget.trip[_requiredDocColumn] as String?)?.isNotEmpty == true;
+      if (!alreadyUploaded) {
+        final docLabel = _getRequiredDocLabel(l10n);
+        final doUpload = await _showUploadGate(docLabel);
+        if (doUpload != true) return; // User cancelled
+        return _pickAndUploadDoc(docLabel);
+      }
+    }
+
+    await _performStageAdvance(next);
+  }
+
+  Future<void> _performStageAdvance(String next) async {
     setState(() => _isUpdating = true);
     HapticFeedback.mediumImpact();
 
@@ -203,11 +267,266 @@ class _TripCardState extends ConsumerState<_TripCard> {
     }
   }
 
+  Future<bool?> _showUploadGate(String docLabel) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text('Upload $docLabel'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _currentStage == 'loading'
+                  ? Icons.description
+                  : Icons.camera_alt,
+              size: 48,
+              color: AppColors.brandTeal,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _currentStage == 'loading'
+                  ? 'Please upload the Lorry Receipt (Bilty) photo before marking In Transit.'
+                  : _isSuperLoad
+                      ? 'Please upload Proof of Delivery photo. Admin will review and approve before the load is marked as completed.'
+                      : 'Please upload Proof of Delivery photo before marking Delivered.',
+              textAlign: TextAlign.center,
+              style: AppTypography.bodyMedium,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.camera_alt, size: 18),
+            label: const Text('Take Photo'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.brandTeal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadDoc(String docLabel) async {
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Choose source'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, ImageSource.camera),
+            child: const ListTile(
+              leading: Icon(Icons.camera_alt),
+              title: Text('Camera'),
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, ImageSource.gallery),
+            child: const ListTile(
+              leading: Icon(Icons.photo_library),
+              title: Text('Gallery'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null || !mounted) return;
+
+    final picked = await _picker.pickImage(
+      source: source,
+      maxWidth: 1920,
+      imageQuality: 80,
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() => _isUpdating = true);
+
+    try {
+      final userId = ref.read(authServiceProvider).currentUser?.id;
+      if (userId == null) throw Exception('Not authenticated');
+
+      final loadId = widget.trip['id'] as String;
+      final column = _requiredDocColumn;
+      final fileExt = picked.path.split('.').last;
+      final storagePath = '$userId/${column}_$loadId.$fileExt';
+
+      final storage = ref.read(storageServiceProvider);
+      final url = await storage.uploadFile(
+        bucket: 'verification-docs',
+        filePath: storagePath,
+        file: File(picked.path),
+      );
+
+      // Update the load record with the uploaded URL
+      final db = ref.read(databaseServiceProvider);
+      await db.updateLoad(loadId, {column: url});
+
+      // Now advance the stage
+      final next = _nextStage;
+      if (next != null) {
+        await db.updateTripStage(loadId, next);
+      }
+
+      if (mounted) {
+        AppDialogs.showSnackBar(
+          context,
+          _currentStage == 'loading'
+              ? 'LR uploaded. Trip marked In Transit.'
+              : _isSuperLoad
+                  ? 'POD uploaded. Awaiting admin approval.'
+                  : 'POD uploaded. Trip completed!',
+        );
+      }
+      widget.onStageUpdated();
+    } catch (e) {
+      if (mounted) {
+        AppDialogs.showErrorSnackBar(context, e);
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
+  Future<void> _showRatingDialog(Map<String, dynamic> trip) async {
+    final db = ref.read(databaseServiceProvider);
+    final userId = ref.read(authServiceProvider).currentUser?.id;
+    if (userId == null) return;
+
+    final loadId = trip['id'] as String;
+    final supplierId = trip['supplier_id'] as String?;
+    if (supplierId == null) {
+      if (mounted) {
+        AppDialogs.showSnackBar(context, 'Supplier info not available');
+      }
+      return;
+    }
+
+    // Check if already rated
+    final alreadyRated = await db.hasRated(
+      loadId: loadId,
+      reviewerId: userId,
+    );
+    if (alreadyRated) {
+      if (mounted) {
+        AppDialogs.showSnackBar(context, AppLocalizations.of(context)!.alreadyRated);
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    int selectedScore = 0;
+    final commentController = TextEditingController();
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.rateSupplier),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${trip['origin_city']} → ${trip['dest_city']}',
+                style: AppTypography.bodyMedium
+                    .copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (i) {
+                  final starIndex = i + 1;
+                  return IconButton(
+                    onPressed: () =>
+                        setDialogState(() => selectedScore = starIndex),
+                    icon: Icon(
+                      starIndex <= selectedScore
+                          ? Icons.star
+                          : Icons.star_border,
+                      color: AppColors.brandOrange,
+                      size: 36,
+                    ),
+                  );
+                }),
+              ),
+              if (selectedScore > 0)
+                Builder(builder: (_) {
+                  final l10n = AppLocalizations.of(context)!;
+                  final labels = ['', l10n.ratingPoor, l10n.ratingFair, l10n.ratingGood, l10n.ratingVeryGood, l10n.ratingExcellent];
+                  return Text(
+                    labels[selectedScore],
+                    style: AppTypography.bodySmall
+                        .copyWith(color: AppColors.brandOrange),
+                  );
+                }),
+              const SizedBox(height: 12),
+              TextField(
+                controller: commentController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context)!.addComment,
+                  border: const OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: selectedScore > 0
+                  ? () => Navigator.pop(ctx, true)
+                  : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.brandOrange,
+              ),
+              child: Text(AppLocalizations.of(context)!.submitRating),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final commentText = commentController.text.trim();
+    commentController.dispose();
+
+    if (submitted != true || selectedScore == 0 || !mounted) return;
+
+    try {
+      await db.submitRating(
+        loadId: loadId,
+        reviewerId: userId,
+        revieweeId: supplierId,
+        reviewerRole: 'trucker',
+        score: selectedScore,
+        comment: commentText,
+      );
+      if (mounted) {
+        AppDialogs.showSuccessSnackBar(context, AppLocalizations.of(context)!.ratingSubmitted);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppDialogs.showErrorSnackBar(context, e);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final trip = widget.trip;
     final status = trip['status'] as String? ?? 'booked';
     final isDelivered = _currentStage == 'delivered';
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
@@ -241,34 +560,75 @@ class _TripCardState extends ConsumerState<_TripCard> {
           const SizedBox(height: 16),
 
           // Trip stage progress
-          _buildStageProgress(),
+          _buildStageProgress(l10n),
 
           // Advance button
           if (!isDelivered && status != 'completed') ...[
             const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _isUpdating ? null : () => _advanceStage(l10n),
+                    icon: _isUpdating
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.brandTeal,
+                            ),
+                          )
+                        : Icon(_stageIcons[_nextStage] ?? Icons.arrow_forward,
+                            size: 18),
+                    label: Text(
+                      _nextStage != null
+                          ? 'Mark: ${_getStageLabels(l10n)[_nextStage]}'
+                          : 'Up to date',
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.brandTeal,
+                      side: const BorderSide(color: AppColors.brandTeal),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    final origin = trip['origin_city'] as String? ?? '';
+                    final dest = trip['dest_city'] as String? ?? '';
+                    final material = trip['material'] as String? ?? '';
+                    final weight = trip['weight_tonnes']?.toString() ?? '';
+                    context.push('/navigation', extra: {
+                      'origin': origin,
+                      'destination': dest,
+                      'tripId': trip['id'] as String?,
+                      'loadContext': '$origin → $dest | $material | ${weight}T',
+                    });
+                  },
+                  icon: const Icon(Icons.navigation, size: 18),
+                  label: const Text('Navigate'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.brandOrange,
+                    side: const BorderSide(color: AppColors.brandOrange),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          // Rate button for completed trips
+          if (isDelivered || status == 'completed') ...[
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: _isUpdating ? null : _advanceStage,
-                icon: _isUpdating
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.brandTeal,
-                        ),
-                      )
-                    : Icon(_stageIcons[_nextStage] ?? Icons.arrow_forward,
-                        size: 18),
-                label: Text(
-                  _nextStage != null
-                      ? 'Mark: ${_stageLabels[_nextStage]}'
-                      : 'Up to date',
-                ),
+                onPressed: () => _showRatingDialog(trip),
+                icon: const Icon(Icons.star_outline, size: 18),
+                label: const Text('Rate Supplier'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.brandTeal,
-                  side: const BorderSide(color: AppColors.brandTeal),
+                  foregroundColor: AppColors.brandOrange,
+                  side: const BorderSide(color: AppColors.brandOrange),
                 ),
               ),
             ),
@@ -278,7 +638,7 @@ class _TripCardState extends ConsumerState<_TripCard> {
     );
   }
 
-  Widget _buildStageProgress() {
+  Widget _buildStageProgress(AppLocalizations l10n) {
     return Row(
       children: List.generate(_tripStages.length, (i) {
         final isCompleted = i <= _currentIndex;
@@ -304,7 +664,7 @@ class _TripCardState extends ConsumerState<_TripCard> {
                 Expanded(
                   child: Container(
                     height: 2,
-                    color: i < _currentIndex
+                    color: isCompleted
                         ? AppColors.brandTeal
                         : AppColors.textTertiary.withValues(alpha: 0.2),
                   ),

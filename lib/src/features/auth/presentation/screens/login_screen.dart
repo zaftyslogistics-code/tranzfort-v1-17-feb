@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -83,7 +83,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else if (role == 'supplier') {
         context.go('/supplier-dashboard');
       } else {
-        context.go('/find-loads');
+        context.go('/trucker-dashboard');
       }
     } catch (e) {
       if (mounted) {
@@ -126,6 +126,60 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
+        AppDialogs.showErrorSnackBar(context, e);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signInWithGoogle();
+
+      // Invalidate all providers to clear any stale data
+      invalidateAllUserProviders(ref);
+
+      final user = authService.currentUser;
+      final mobile = user?.userMetadata?['mobile'] as String?;
+      final phone = user?.phone;
+
+      // If mobile number is missing, route to completion screen
+      if ((mobile == null || mobile.isEmpty) && (phone == null || phone.isEmpty)) {
+        if (!mounted) return;
+        context.go('/google-complete-registration');
+        return;
+      }
+
+      // Ensure profile exists
+      await authService.ensureProfileExists();
+
+      // Fetch fresh role
+      final role = await authService.getUserRole();
+
+      if (!mounted) return;
+
+      // Navigate explicitly based on role
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!mounted) return;
+
+      if (role == null || role.isEmpty) {
+        context.go('/role-selection');
+      } else if (role == 'supplier') {
+        context.go('/supplier-dashboard');
+      } else {
+        context.go('/trucker-dashboard');
+      }
+    } catch (e) {
+      if (mounted) {
+        // Handle aborted sign in gracefully
+        if (e.toString().contains('Google sign in was aborted')) {
+          return;
+        }
         AppDialogs.showErrorSnackBar(context, e);
       }
     } finally {
@@ -302,6 +356,48 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ? _handleOtpLogin
                                   : _handleLogin),
                         ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            const Expanded(child: Divider()),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                l10n.or.toUpperCase(),
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const Expanded(child: Divider()),
+                          ],
+                        ).staggerEntrance(5),
+                        const SizedBox(height: 24),
+                        OutlinedButton.icon(
+                          onPressed: _isLoading ? null : _handleGoogleSignIn,
+                          icon: Image.asset(
+                            'assets/images/google_logo.png',
+                            height: 24,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.g_mobiledata, size: 28),
+                          ),
+                          label: Text(
+                            l10n.continueWithGoogle,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: const BorderSide(color: AppColors.borderDefault),
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ).staggerEntrance(6),
                       ],
                     ),
                   ),

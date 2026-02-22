@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/providers/auth_service_provider.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/utils/animations.dart';
 import '../../../../core/utils/dialogs.dart';
+import '../../../../shared/widgets/tts_button.dart';
 
 class RoleSelectionScreen extends ConsumerStatefulWidget {
   const RoleSelectionScreen({super.key});
@@ -76,7 +78,19 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 64),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TtsButton(
+                  text: 'Read aloud',
+                  spokenText: ref.watch(localeProvider).languageCode == 'hi'
+                      ? 'अपनी भूमिका चुनें। क्या आप माल भेजने वाले सप्लायर हैं, या माल ढोने वाले ट्रकर?'
+                      : 'Choose your role. Are you a supplier who sends goods, or a trucker who transports them?',
+                  locale: ref.watch(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-IN',
+                  size: 22,
+                ),
+              ),
+              const SizedBox(height: 32),
               Text(
                 l10n.roleSelectionTitle,
                 style: AppTypography.h1Hero,

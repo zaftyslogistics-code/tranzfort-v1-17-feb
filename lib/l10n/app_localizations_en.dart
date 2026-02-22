@@ -21,6 +21,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logout => 'Logout';
 
   @override
+  String get continueWithGoogle => 'Continue with Google';
+
+  @override
+  String get or => 'Or';
+
+  @override
   String get email => 'Email';
 
   @override
@@ -224,6 +230,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get verifyOtp => 'Verify OTP';
 
   @override
+  String get otpSent => 'OTP sent';
+
+  @override
+  String get verify => 'Verify';
+
+  @override
+  String get upload => 'Upload';
+
+  @override
   String get otpExpired => 'OTP has expired';
 
   @override
@@ -326,7 +341,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noActiveLoads => 'No active loads';
 
   @override
-  String get noCompletedLoads => 'No completed loads';
+  String get noCompletedLoads => 'No completed loads yet';
 
   @override
   String get quickActions => 'Quick Actions';
@@ -395,6 +410,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fixedPrice => 'Fixed Price';
+
+  @override
+  String get paymentTerms => '80% Advance on Loading, 20% on Delivery';
 
   @override
   String get pickupDateHint => 'When should pickup happen?';
@@ -578,7 +596,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myFleetTitle => 'My Fleet';
 
   @override
-  String get noTrucksYet => 'No trucks added yet';
+  String get noTrucksYet => 'No trucks yet';
 
   @override
   String get addYourFirstTruck => 'Add your first truck to start finding loads';
@@ -685,6 +703,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rateSupplier => 'Rate Supplier';
+
+  @override
+  String get ratingPoor => 'Poor';
+
+  @override
+  String get ratingFair => 'Fair';
+
+  @override
+  String get ratingGood => 'Good';
+
+  @override
+  String get ratingVeryGood => 'Very Good';
+
+  @override
+  String get ratingExcellent => 'Excellent';
+
+  @override
+  String get submitRating => 'Submit Rating';
+
+  @override
+  String get addComment => 'Add a comment (optional)';
+
+  @override
+  String get alreadyRated => 'You have already rated this trip';
+
+  @override
+  String get ratingSubmitted => 'Rating submitted!';
 
   @override
   String get tripStarted => 'Trip started';
@@ -945,6 +990,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get version => 'Version';
 
   @override
+  String get appVersion => 'App Version';
+
+  @override
   String get help => 'Help';
 
   @override
@@ -1025,37 +1073,77 @@ class AppLocalizationsEn extends AppLocalizations {
   String get minLengthRequired => 'Minimum length required';
 
   @override
-  String get botTitle => 'TranZfort Assistant';
+  String get resetPasswordSubtitle =>
+      'Enter your email and we will send a reset link.';
+
+  @override
+  String get enterValidEmail => 'Enter a valid email';
+
+  @override
+  String get resetLinkSent => 'Reset link sent. Check your inbox.';
+
+  @override
+  String get drivingLicenceNumber => 'Driving Licence Number';
+
+  @override
+  String get documentPhotoHint =>
+      'Take clear photos of your documents. All information must be clearly visible.';
+
+  @override
+  String get aadhaarFront => 'Aadhaar Front';
+
+  @override
+  String get aadhaarBack => 'Aadhaar Back';
+
+  @override
+  String get panCard => 'PAN Card';
+
+  @override
+  String get rcFront => 'RC Front';
+
+  @override
+  String get rcBack => 'RC Back';
+
+  @override
+  String get truckPhoto => 'Truck Photo';
+
+  @override
+  String get botTitle => 'Nancy - Transport Helper';
 
   @override
   String get botGreeting =>
-      'Hi! I\'m your TranZfort assistant. How can I help?';
+      'Hi! I\'m Nancy, your TranZfort helper. Post a load or find loads. What do you need?';
 
   @override
-  String get botTyping => 'Assistant is typing...';
+  String get botTyping => 'Nancy is typing...';
 
   @override
   String get botHelpOptions =>
-      'I can help you:\n• Post a new load\n• Find loads\n• Answer questions';
+      'I can help you post a load, find loads, or answer questions.';
 
   @override
-  String get botDidntUnderstand => 'I didn\'t understand. Could you rephrase?';
+  String get botDidntUnderstand => 'Didn\'t get that. What do you need?';
 
   @override
-  String get botAskOrigin => 'Where are you shipping from? (Origin city)';
+  String get botAskOrigin => 'Where from? Type a city or pick one below.';
 
   @override
-  String get botAskDestination =>
-      'Where are you shipping to? (Destination city)';
+  String get botAskDestination => 'Where to? Type a city or pick one.';
 
   @override
-  String get botAskMaterial => 'What material are you shipping?';
+  String get botAskMaterial => 'What\'s the cargo? Type or pick below.';
 
   @override
-  String get botAskWeight => 'What\'s the weight? (in tonnes)';
+  String get botAskWeight => 'How many tonnes? Type or pick below.';
 
   @override
-  String get botAskTruckType => 'What type of truck do you need?';
+  String get botAskTruckType => 'What truck type?';
+
+  @override
+  String get botAskPrice => 'Rate per tonne? Type or pick.';
+
+  @override
+  String get botAskPickupDate => 'When to pick up?';
 
   @override
   String botConfirmDetails(
@@ -1064,16 +1152,16 @@ class AppLocalizationsEn extends AppLocalizations {
     String material,
     String weight,
   ) {
-    return 'Please confirm:\n📍 $origin → $destination\n📦 $material\n⚖️ $weight tonnes\n\nIs this correct?';
+    return 'Ready to post: $origin to $destination. $material. $weight tonnes. Post it?';
   }
 
   @override
   String botLoadPosted(String loadId) {
-    return '✅ Load posted successfully!\nLoad ID: $loadId';
+    return 'Load posted. Load ID: $loadId';
   }
 
   @override
-  String get botSearchingLoads => '🔍 Searching for loads...';
+  String get botSearchingLoads => 'Searching for loads...';
 
   @override
   String botFoundLoads(int count) {
@@ -1085,14 +1173,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'No loads found. Try different cities or truck type.';
 
   @override
-  String get botThanks => 'Thank you for using TranZfort! 👍';
+  String get botThanks => 'Thanks for using TranZfort! Anything else?';
 
   @override
-  String get botDownloadAi => 'Download AI';
+  String get botHelpPostLoad =>
+      'To post a load, go to Dashboard and tap Post Load. Fill in the city, cargo, weight, and price. Or just tell me and I\'ll do it.';
+
+  @override
+  String get botHelpVerify =>
+      'To verify your account, go to Profile and tap Verification. Upload your Aadhaar, PAN, and business documents. We review within 24 hours.';
+
+  @override
+  String get botHelpPricing =>
+      'TranZfort is free. No commission on loads. Super Loads have a small fee.';
+
+  @override
+  String get botHelpSupport =>
+      'Need help? Email support@tranzfort.com or call 1800-XXX-XXXX. Or tell me your problem.';
+
+  @override
+  String get botDownloadAi => 'AI Assistant coming soon';
 
   @override
   String get botDownloadAiDescription =>
-      'Get smarter responses and better Hindi understanding';
+      'Smarter responses and better Hindi understanding';
 
   @override
   String botAiModelSize(String size) {
@@ -1328,4 +1432,434 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get truckTypeRefrigerated => 'Refrigerated';
+
+  @override
+  String get chatQuickActions => 'Quick Actions';
+
+  @override
+  String get chatSendTruckDetails => 'Send Truck Details';
+
+  @override
+  String get chatQuoteRate => 'Quote My Rate';
+
+  @override
+  String get chatQuoteRateMsg =>
+      'My rate for this load is ₹___. Let me know if that works.';
+
+  @override
+  String get chatConfirmAvailability => 'Confirm Availability';
+
+  @override
+  String get chatConfirmAvailabilityMsg =>
+      'I am available for this load. Please confirm booking.';
+
+  @override
+  String get chatShareRc => 'Share RC';
+
+  @override
+  String get chatShareLoadDetails => 'Share Load Details';
+
+  @override
+  String get chatRequestDocuments => 'Request RC / Documents';
+
+  @override
+  String get chatRequestDocumentsMsg =>
+      'Please share your RC book and vehicle documents.';
+
+  @override
+  String get chatAskTruckDetails => 'Ask Truck Details';
+
+  @override
+  String get chatAskTruckDetailsMsg =>
+      'Can you share your truck details — body type, capacity, and tyres?';
+
+  @override
+  String get chatShareLoadRate => 'Share Load Rate';
+
+  @override
+  String get chatShareLoadRateMsg =>
+      'The rate for this load is ₹___. Are you interested?';
+
+  @override
+  String get chatSendLocation => 'Send Location';
+
+  @override
+  String get chatProposeDeal => 'Propose Deal';
+
+  @override
+  String get chatNegotiatePrice => 'Negotiate Price';
+
+  @override
+  String get chatNegotiatePriceMsg =>
+      'Can we discuss the price? What\'s your best rate?';
+
+  @override
+  String get chatDealProposal => 'Deal Proposal';
+
+  @override
+  String get chatDealAccepted => 'Deal Accepted';
+
+  @override
+  String get chatDealDeclined => 'Declined';
+
+  @override
+  String get chatAccept => 'Accept';
+
+  @override
+  String get chatReject => 'Reject';
+
+  @override
+  String get postSimilar => 'Post Similar';
+
+  @override
+  String get truckMatch => 'Truck Match';
+
+  @override
+  String get viewMyLoads => 'View My Loads';
+
+  @override
+  String get advance => 'Advance';
+
+  @override
+  String get onLoading => 'on loading';
+
+  @override
+  String get additional => 'Additional';
+
+  @override
+  String get notes => 'Notes';
+
+  @override
+  String get savedLoads => 'Saved Loads';
+
+  @override
+  String get noSavedLoads => 'No saved loads yet';
+
+  @override
+  String get loadBookmarked => 'Load saved';
+
+  @override
+  String get loadUnbookmarked => 'Load removed from saved';
+
+  @override
+  String get fleetManagement => 'Fleet Management';
+
+  @override
+  String get manageFleet => 'Manage your fleet of trucks';
+
+  @override
+  String get offlineQueue => 'Messages will be sent when you\'re back online';
+
+  @override
+  String get messageQueued => 'Message queued for sending';
+
+  @override
+  String get saveDraft => 'Draft';
+
+  @override
+  String get helpAndSupport => 'Help and Support';
+
+  @override
+  String get pleaseAllFields => 'Please fill all fields';
+
+  @override
+  String get supportTicketSubmitted => 'Support ticket submitted!';
+
+  @override
+  String get bookedBy => 'Booked by';
+
+  @override
+  String get routeAndGoods => 'Route and Goods';
+
+  @override
+  String get truckRequirements => 'Truck Requirements';
+
+  @override
+  String get pricingSchedule => 'Pricing and Schedule';
+
+  @override
+  String advancePercent(int percent) {
+    return 'Advance: $percent%';
+  }
+
+  @override
+  String get viewMyLoadsButton => 'View My Loads';
+
+  @override
+  String get noCompletedTrips => 'No completed trips yet';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get gallery => 'Gallery';
+
+  @override
+  String get aadhaarFrontLabel => 'Aadhaar Front';
+
+  @override
+  String get aadhaarBackLabel => 'Aadhaar Back';
+
+  @override
+  String get panCardLabel => 'PAN Card';
+
+  @override
+  String get dlFrontLabel => 'Driving Licence Front';
+
+  @override
+  String get dlBackLabel => 'Driving Licence Back';
+
+  @override
+  String get businessLicenceLabel => 'Business Licence';
+
+  @override
+  String get gstCertificateLabel => 'GST Certificate';
+
+  @override
+  String get takePhotoOrGallery => 'Take a photo or choose from gallery';
+
+  @override
+  String uploadDocument(String documentName) {
+    return 'Upload $documentName';
+  }
+
+  @override
+  String get lrUploadPrompt =>
+      'Please upload the Lorry Receipt photo before marking In Transit.';
+
+  @override
+  String get podUploadPrompt =>
+      'Please upload the Proof of Delivery photo to complete this trip.';
+
+  @override
+  String get podUploadPromptSuper =>
+      'Please upload the Proof of Delivery photo. Admin will review before marking completed.';
+
+  @override
+  String get lorryReceipt => 'Lorry Receipt';
+
+  @override
+  String get proofOfDelivery => 'Proof of Delivery';
+
+  @override
+  String get takePhoto => 'Take Photo';
+
+  @override
+  String get stageNotStarted => 'Not Started';
+
+  @override
+  String get stageReachedPickup => 'Reached Pickup';
+
+  @override
+  String get stageLoading => 'Loading';
+
+  @override
+  String get stageInTransit => 'In Transit';
+
+  @override
+  String get stageReachedDestination => 'Reached Destination';
+
+  @override
+  String get stageUnloading => 'Unloading';
+
+  @override
+  String get stageDelivered => 'Delivered';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingGetStarted => 'Get Started';
+
+  @override
+  String get companySection => 'Company';
+
+  @override
+  String get contactSection => 'Contact';
+
+  @override
+  String get fleetSection => 'Fleet';
+
+  @override
+  String get companyNameLabel => 'Company Name';
+
+  @override
+  String get gstNumberLabel => 'GST Number';
+
+  @override
+  String get typingIndicator => 'Typing...';
+
+  @override
+  String get navNavigate => 'Navigate';
+
+  @override
+  String get navFrom => 'FROM';
+
+  @override
+  String get navTo => 'TO';
+
+  @override
+  String get navOriginHint => 'Origin city or address';
+
+  @override
+  String get navDestHint => 'Destination city or address';
+
+  @override
+  String get navMyLocation => 'My Location';
+
+  @override
+  String get navCurrentLocation => 'Current Location';
+
+  @override
+  String get navFindRoute => 'Find Route';
+
+  @override
+  String get navRecentDestinations => 'Recent Destinations';
+
+  @override
+  String get navSavedPlaces => 'Saved Places';
+
+  @override
+  String get navAddPlace => 'Add a Place';
+
+  @override
+  String get navQuickTips => 'Quick Tips';
+
+  @override
+  String get navTipMyLocation =>
+      'Tap \"My Location\" to auto-detect your origin';
+
+  @override
+  String get navTipSwap => 'Swap origin and destination for return trips';
+
+  @override
+  String get navTipLoadAware => 'Navigate from My Trips for load-aware routing';
+
+  @override
+  String get navRoutePreview => 'Route Preview';
+
+  @override
+  String get navStartNavigation => 'Start Navigation';
+
+  @override
+  String get navDieselCost => 'Diesel';
+
+  @override
+  String get navTollCost => 'Tolls';
+
+  @override
+  String get navTotalCost => 'Total';
+
+  @override
+  String get navEstimatedCost => 'Estimated Trip Cost';
+
+  @override
+  String get navNoRouteFound => 'No route found between these locations';
+
+  @override
+  String get navCalculatingRoute => 'Calculating route...';
+
+  @override
+  String get navRerouting => 'Rerouting...';
+
+  @override
+  String get navArrived => 'You have arrived!';
+
+  @override
+  String navArrivedAt(String city) {
+    return 'You have arrived at $city';
+  }
+
+  @override
+  String get navStopNavigation => 'Stop Navigation?';
+
+  @override
+  String get navStopConfirm => 'Are you sure you want to stop navigating?';
+
+  @override
+  String get navContinue => 'Continue';
+
+  @override
+  String get navStop => 'Stop';
+
+  @override
+  String get navMute => 'Mute';
+
+  @override
+  String get navUnmute => 'Unmute';
+
+  @override
+  String get navRepeat => 'Repeat';
+
+  @override
+  String get navReroute => 'Reroute';
+
+  @override
+  String get navSteps => 'Steps';
+
+  @override
+  String get navAllSteps => 'All Steps';
+
+  @override
+  String get navGpsDisabled =>
+      'GPS is disabled. Please enable location services.';
+
+  @override
+  String get navPermDenied => 'Location permission denied.';
+
+  @override
+  String get navPermDeniedForever =>
+      'Location permission permanently denied. Enable in Settings.';
+
+  @override
+  String navGpsError(String error) {
+    return 'GPS error: $error';
+  }
+
+  @override
+  String get navSelectOrigin => 'Please select an origin location';
+
+  @override
+  String get navSelectDest => 'Please select a destination';
+
+  @override
+  String get navTrackingActive => 'TranZfort Navigation active';
+
+  @override
+  String get navTrackingBg => 'Tracking your trip in the background';
+
+  @override
+  String get navTrackingPaused => 'Tracking paused — stopped';
+
+  @override
+  String get navDeletePlace => 'Delete Place';
+
+  @override
+  String navDeletePlaceConfirm(String label) {
+    return 'Delete \"$label\"?';
+  }
+
+  @override
+  String get navNoSavedPlaces => 'No saved places yet';
+
+  @override
+  String get navAddPlaceHint =>
+      'Tap + to add your home, depot, or favorite stops';
+
+  @override
+  String get navPlaceSaved => 'Place saved!';
+
+  @override
+  String get navPlaceDeleted => 'Place deleted';
+
+  @override
+  String navDistanceRemaining(String km) {
+    return '$km km remaining';
+  }
+
+  @override
+  String get navViewRoute => 'View Route';
 }

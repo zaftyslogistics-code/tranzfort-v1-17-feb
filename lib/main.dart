@@ -3,14 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'src/core/config/supabase_config.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/core/routing/app_router.dart';
 import 'src/core/providers/locale_provider.dart';
+import 'src/features/navigation/presentation/widgets/navigation_banner.dart';
 import 'src/shared/widgets/ban_check_wrapper.dart';
 import 'src/shared/widgets/connectivity_banner.dart';
 import 'src/shared/widgets/error_boundary.dart';
+import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,18 +51,18 @@ class TranZfortApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       routerConfig: router,
       locale: locale,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('hi'),
-      ],
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) {
         return BanCheckWrapper(
-          child: ConnectivityBanner(child: child ?? const SizedBox.shrink()),
+          child: ConnectivityBanner(
+            child: Column(
+              children: [
+                const NavigationBanner(),
+                Expanded(child: child ?? const SizedBox.shrink()),
+              ],
+            ),
+          ),
         );
       },
     );

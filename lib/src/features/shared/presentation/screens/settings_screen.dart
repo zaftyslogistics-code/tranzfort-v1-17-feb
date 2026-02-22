@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -10,19 +11,34 @@ import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/utils/dialogs.dart';
 import '../../../../shared/widgets/app_drawer.dart';
 import '../../../../core/utils/haptics.dart';
+import '../../../bot/providers/bot_provider.dart';
+import '../../../../shared/widgets/tts_button.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final roleAsync = ref.watch(userRoleProvider);
     final role = roleAsync.valueOrNull ?? '';
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: Text(l10n.settings),
+        actions: [
+          TtsButton(
+            text: 'Read aloud',
+            spokenText: ref.watch(localeProvider).languageCode == 'hi'
+                ? 'सेटिंग्स। अकाउंट, भाषा, और अप्प की जानकारी यहां मिलेगी।'
+                : 'Settings. Manage your account, language preference, and app information here.',
+            locale: ref.watch(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-IN',
+            size: 22,
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(AppSpacing.screenPaddingH),
@@ -30,56 +46,63 @@ class SettingsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Account
-            _sectionTitle('Account'),
+            _sectionTitle(l10n.account),
             _settingsCard([
               _settingsTile(
                 icon: Icons.swap_horiz,
-                title: 'Switch Role',
+                title: l10n.switchRole,
                 subtitle:
-                    'Currently: ${role == 'supplier' ? 'Supplier' : 'Trucker'}',
+                    role == 'supplier' ? l10n.supplier : l10n.trucker,
                 onTap: () => _showSwitchRoleDialog(context, ref, role),
               ),
               const Divider(height: 1),
               _settingsTile(
                 icon: Icons.lock_outline,
-                title: 'Change Password',
+                title: l10n.changePassword,
                 onTap: () => context.push('/forgot-password'),
               ),
             ]),
             const SizedBox(height: 16),
 
             // Preferences
-            _sectionTitle('Preferences'),
+            _sectionTitle(l10n.settings),
             _settingsCard([
               _settingsTile(
                 icon: Icons.language,
-                title: 'Language',
+                title: l10n.language,
                 subtitle: ref.watch(localeProvider).languageCode == 'hi'
                     ? 'हिन्दी'
                     : 'English',
                 onTap: () => _showLanguageDialog(context, ref),
               ),
+              const Divider(height: 1),
+              _settingsTile(
+                icon: Icons.auto_awesome,
+                title: 'AI & Voice',
+                subtitle: 'Download AI models for bot, voice, transcription',
+                onTap: () => context.push('/ai-settings'),
+              ),
             ]),
             const SizedBox(height: 16),
 
             // About
-            _sectionTitle('About'),
+            _sectionTitle(l10n.about),
             _settingsCard([
               _settingsTile(
                 icon: Icons.description_outlined,
-                title: 'Terms & Conditions',
+                title: l10n.termsOfService,
                 onTap: () => _openUrl('https://tranzfort.com/terms'),
               ),
               const Divider(height: 1),
               _settingsTile(
                 icon: Icons.privacy_tip_outlined,
-                title: 'Privacy Policy',
+                title: l10n.privacyPolicy,
                 onTap: () => _openUrl('https://tranzfort.com/privacy'),
               ),
               const Divider(height: 1),
               _settingsTile(
                 icon: Icons.info_outline,
-                title: 'App Version',
+                title: l10n.appVersion,
                 subtitle: '1.0.0',
                 onTap: null,
               ),
@@ -87,21 +110,21 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 16),
 
             // Data & Privacy
-            _sectionTitle('Data & Privacy'),
+            _sectionTitle(l10n.privacyPolicy),
             _settingsCard([
               // Data export - only show if feature flag enabled
               if (_isDataExportEnabled(ref))
                 _settingsTile(
                   icon: Icons.download,
-                  title: 'Download My Data',
-                  subtitle: 'Export your data',
+                  title: l10n.dataExport,
+                  subtitle: l10n.dataExport,
                   onTap: () => _showDataExportDialog(context, ref),
                 ),
               if (_isDataExportEnabled(ref))
                 const Divider(height: 1),
               _settingsTile(
                 icon: Icons.delete_forever,
-                title: 'Delete My Account',
+                title: l10n.deleteAccount,
                 titleColor: AppColors.error,
                 onTap: () => _showDeleteAccountDialog(context, ref),
               ),
@@ -113,7 +136,7 @@ class SettingsScreen extends ConsumerWidget {
             _settingsCard([
               _settingsTile(
                 icon: Icons.logout,
-                title: 'Logout',
+                title: l10n.logout,
                 titleColor: AppColors.error,
                 onTap: () => _showLogoutDialog(context, ref),
               ),
@@ -196,7 +219,7 @@ class SettingsScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 16),
-            Text('Select Language',
+            Text(AppLocalizations.of(context)!.language,
                 style: AppTypography.h3Subsection),
             const SizedBox(height: 12),
             ListTile(
@@ -231,13 +254,14 @@ class SettingsScreen extends ConsumerWidget {
   void _showSwitchRoleDialog(
       BuildContext context, WidgetRef ref, String currentRole) async {
     final newRole = currentRole == 'supplier' ? 'trucker' : 'supplier';
-    final newRoleLabel = newRole == 'supplier' ? 'Supplier' : 'Trucker';
+    final l10n = AppLocalizations.of(context)!;
+    final newRoleLabel = newRole == 'supplier' ? l10n.supplier : l10n.trucker;
 
     final confirmed = await AppDialogs.confirm(
       context,
-      title: 'Switch Role',
-      description: 'Switch to $newRoleLabel? You will be signed out.',
-      confirmText: 'Switch',
+      title: l10n.switchRole,
+      description: '${l10n.switchRole}: $newRoleLabel?',
+      confirmText: l10n.switchRole,
     );
 
     if (!confirmed || !context.mounted) return;
@@ -251,13 +275,12 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await AppDialogs.confirm(
       context,
-      title: 'Delete Account',
-      description:
-          'Your account will be scheduled for deletion within 30 days. '
-          'Contact support@tranzfort.com to cancel.',
-      confirmText: 'Delete',
+      title: l10n.deleteAccount,
+      description: l10n.deleteAccountConfirm,
+      confirmText: l10n.delete,
       isDestructive: true,
     );
 
@@ -287,11 +310,12 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _showLogoutDialog(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await AppDialogs.confirm(
       context,
-      title: 'Logout',
-      description: 'Are you sure you want to logout?',
-      confirmText: 'Logout',
+      title: l10n.logout,
+      description: l10n.logoutConfirm,
+      confirmText: l10n.logout,
       isDestructive: true,
     );
 
@@ -299,6 +323,8 @@ class SettingsScreen extends ConsumerWidget {
 
     AppHaptics.onDestructive();
     invalidateAllUserProviders(ref);
+    // A8-FIX: Clear bot state so next user doesn't see previous user's conversation
+    ref.read(botServiceProvider).resetAllConversations();
     await ref.read(authServiceProvider).signOut();
     if (context.mounted) context.go('/login');
   }
@@ -310,13 +336,12 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _showDataExportDialog(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await AppDialogs.confirm(
       context,
-      title: 'Download My Data',
-      description:
-          'We will prepare a download of all your personal data including profile, loads, trips, and messages. '
-          'This may take up to 24 hours. You will receive an email when ready.',
-      confirmText: 'Request Export',
+      title: l10n.dataExport,
+      description: l10n.dataExport,
+      confirmText: l10n.submit,
     );
 
     if (!confirmed || !context.mounted) return;

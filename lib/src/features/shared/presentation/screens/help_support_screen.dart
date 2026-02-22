@@ -8,6 +8,9 @@ import '../../../../core/providers/auth_service_provider.dart';
 import '../../../../core/utils/dialogs.dart';
 import '../../../../shared/widgets/app_drawer.dart';
 import '../../../../shared/widgets/gradient_button.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/widgets/tts_button.dart';
 
 class HelpSupportScreen extends ConsumerStatefulWidget {
   const HelpSupportScreen({super.key});
@@ -30,9 +33,10 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
   }
 
   Future<void> _handleSubmit() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_subjectController.text.trim().isEmpty ||
         _descriptionController.text.trim().isEmpty) {
-      AppDialogs.showSnackBar(context, 'Please fill all fields');
+      AppDialogs.showSnackBar(context, l10n.pleaseAllFields);
       return;
     }
 
@@ -51,7 +55,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
       if (mounted) {
         _subjectController.clear();
         _descriptionController.clear();
-        AppDialogs.showSuccessSnackBar(context, 'Support ticket submitted!');
+        AppDialogs.showSuccessSnackBar(context, AppLocalizations.of(context)!.supportTicketSubmitted);
       }
     } catch (e) {
       if (mounted) {
@@ -67,7 +71,19 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Help & Support')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.helpAndSupport),
+        actions: [
+          TtsButton(
+            text: 'Read aloud',
+            spokenText: ref.watch(localeProvider).languageCode == 'hi'
+                ? 'मदद और सहायता। support@tranzfort.com पर ईमेल करें। या फॉर्म भरकर सहायता टिकट जमा करें।'
+                : 'Help and Support. Email us at support@tranzfort.com. Or fill the form to submit a support ticket.',
+            locale: ref.watch(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-IN',
+            size: 22,
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(AppSpacing.screenPaddingH),

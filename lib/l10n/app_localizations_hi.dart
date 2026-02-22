@@ -21,6 +21,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get logout => 'लॉगआउट';
 
   @override
+  String get continueWithGoogle => 'Google के साथ जारी रखें';
+
+  @override
+  String get or => 'या';
+
+  @override
   String get email => 'ईमेल';
 
   @override
@@ -224,6 +230,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get verifyOtp => 'OTP सत्यापित करें';
 
   @override
+  String get otpSent => 'OTP भेजा गया';
+
+  @override
+  String get verify => 'सत्यापित करें';
+
+  @override
+  String get upload => 'अपलोड';
+
+  @override
   String get otpExpired => 'OTP समाप्त हो गया है';
 
   @override
@@ -329,7 +344,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get noActiveLoads => 'कोई सक्रिय लोड नहीं';
 
   @override
-  String get noCompletedLoads => 'कोई पूर्ण लोड नहीं';
+  String get noCompletedLoads => 'अभी कोई पूर्ण लोड नहीं';
 
   @override
   String get quickActions => 'त्वरित क्रियाएँ';
@@ -398,6 +413,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get fixedPrice => 'स्थिर मूल्य';
+
+  @override
+  String get paymentTerms => 'लोडिंग पर 80% अग्रिम, डिलीवरी पर 20%';
 
   @override
   String get pickupDateHint => 'पिकअप कब होना चाहिए?';
@@ -582,10 +600,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get myFleetTitle => 'मेरा बेड़ा';
 
   @override
-  String get noTrucksYet => 'अभी तक कोई ट्रक नहीं';
+  String get noTrucksYet => 'अभी कोई ट्रक नहीं';
 
   @override
-  String get addYourFirstTruck => 'लोड खोजने के लिए अपना पहला ट्रक जोड़ें';
+  String get addYourFirstTruck => 'लोड खोजना शुरू करने के लिए पहला ट्रक जोड़ें';
 
   @override
   String get truckNumber => 'ट्रक नंबर';
@@ -688,6 +706,33 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get rateSupplier => 'सप्लायर को रेट करें';
+
+  @override
+  String get ratingPoor => 'कमज़ोर';
+
+  @override
+  String get ratingFair => 'ठीक';
+
+  @override
+  String get ratingGood => 'अच्छा';
+
+  @override
+  String get ratingVeryGood => 'बहुत अच्छा';
+
+  @override
+  String get ratingExcellent => 'ज़बरदस्त';
+
+  @override
+  String get submitRating => 'रेटिंग दें';
+
+  @override
+  String get addComment => 'टिप्पणी जोड़ें (वैकल्पिक)';
+
+  @override
+  String get alreadyRated => 'आपने इस यात्रा को पहले ही रेट कर दिया है';
+
+  @override
+  String get ratingSubmitted => 'रेटिंग सबमिट हो गई!';
 
   @override
   String get tripStarted => 'यात्रा शुरू हुई';
@@ -947,6 +992,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get version => 'संस्करण';
 
   @override
+  String get appVersion => 'ऐप संस्करण';
+
+  @override
   String get help => 'सहायता';
 
   @override
@@ -1027,36 +1075,78 @@ class AppLocalizationsHi extends AppLocalizations {
   String get minLengthRequired => 'न्यूनतम लंबाई आवश्यक';
 
   @override
-  String get botTitle => 'ट्रांजफोर्ट सहायक';
+  String get resetPasswordSubtitle =>
+      'Enter your email and we will send a reset link.';
+
+  @override
+  String get enterValidEmail => 'Enter a valid email';
+
+  @override
+  String get resetLinkSent => 'Reset link sent. Check your inbox.';
+
+  @override
+  String get drivingLicenceNumber => 'Driving Licence Number';
+
+  @override
+  String get documentPhotoHint =>
+      'Take clear photos of your documents. All information must be clearly visible.';
+
+  @override
+  String get aadhaarFront => 'Aadhaar Front';
+
+  @override
+  String get aadhaarBack => 'Aadhaar Back';
+
+  @override
+  String get panCard => 'PAN Card';
+
+  @override
+  String get rcFront => 'RC Front';
+
+  @override
+  String get rcBack => 'RC Back';
+
+  @override
+  String get truckPhoto => 'Truck Photo';
+
+  @override
+  String get botTitle => 'Nancy - ट्रांसपोर्ट हेल्पर';
 
   @override
   String get botGreeting =>
-      'नमस्ते! मैं आपका ट्रांजफोर्ट सहायक हूँ। मैं आपकी कैसे मदद कर सकता हूँ?';
+      'नमस्ते! मैं Nancy हूँ, आपकी TranZfort हेल्पर। लोड पोस्ट करना है या लोड ढूँढना है?';
 
   @override
-  String get botTyping => 'सहायक टाइप कर रहा है...';
+  String get botTyping => 'Nancy टाइप कर रही है...';
 
   @override
   String get botHelpOptions =>
-      'मैं आपकी मदद कर सकता हूँ:\n• नया लोड पोस्ट करें\n• लोड खोजें\n• प्रश्नों के उत्तर';
+      'लोड पोस्ट करना है, लोड ढूँढना है, या कोई सवाल है?';
 
   @override
-  String get botDidntUnderstand => 'मुझे समझ नहीं आया। कृपया फिर से कहें?';
+  String get botDidntUnderstand => 'समझ नहीं आया। दोबारा बोलें?';
 
   @override
-  String get botAskOrigin => 'कहाँ से भेजना है? (प्रस्थान शहर)';
+  String get botAskOrigin =>
+      'कहाँ से लोड उठाना है? शहर का नाम लिखें या नीचे से चुनें।';
 
   @override
-  String get botAskDestination => 'कहाँ भेजना है? (गंतव्य शहर)';
+  String get botAskDestination => 'कहाँ पहुँचाना है? शहर लिखें या चुनें।';
 
   @override
-  String get botAskMaterial => 'क्या सामान भेज रहे हैं?';
+  String get botAskMaterial => 'क्या माल भेजना है? लिखें या नीचे से चुनें।';
 
   @override
-  String get botAskWeight => 'कितना वजन है? (टन में)';
+  String get botAskWeight => 'कितना माल है, टन में? लिखें या चुनें।';
 
   @override
-  String get botAskTruckType => 'किस तरह का ट्रक चाहिए?';
+  String get botAskTruckType => 'कौन सा ट्रक चाहिए?';
+
+  @override
+  String get botAskPrice => 'रेट क्या है, रुपये प्रति टन? लिखें या चुनें।';
+
+  @override
+  String get botAskPickupDate => 'कब उठाना है?';
 
   @override
   String botConfirmDetails(
@@ -1065,16 +1155,16 @@ class AppLocalizationsHi extends AppLocalizations {
     String material,
     String weight,
   ) {
-    return 'कृपया पुष्टि करें:\n📍 $origin → $destination\n📦 $material\n⚖️ $weight टन\n\nक्या यह सही है?';
+    return 'पोस्ट करने के लिए तैयार: $origin से $destination। $material। $weight टन। पोस्ट करें?';
   }
 
   @override
   String botLoadPosted(String loadId) {
-    return '✅ लोड सफलतापूर्वक पोस्ट हुआ!\nलोड ID: $loadId';
+    return 'लोड पोस्ट हो गया। लोड ID: $loadId';
   }
 
   @override
-  String get botSearchingLoads => '🔍 लोड खोज रहा हूँ...';
+  String get botSearchingLoads => 'लोड ढूँढ रहा हूँ...';
 
   @override
   String botFoundLoads(int count) {
@@ -1086,13 +1176,29 @@ class AppLocalizationsHi extends AppLocalizations {
       'कोई लोड नहीं मिला। दूसरे शहर या ट्रक टाइप आज़माएं।';
 
   @override
-  String get botThanks => 'ट्रांजफोर्ट का उपयोग करने के लिए धन्यवाद! 👍';
+  String get botThanks => 'शुक्रिया! कोई और काम हो तो बताएं।';
 
   @override
-  String get botDownloadAi => 'AI डाउनलोड करें';
+  String get botHelpPostLoad =>
+      'लोड पोस्ट करने के लिए Dashboard में जाएं और Post Load दबाएं। शहर, माल, वज़न और रेट भरें। या मुझे बताएं, मैं कर देता हूँ।';
 
   @override
-  String get botDownloadAiDescription => 'स्मार्ट जवाब और बेहतर हिंदी समझ';
+  String get botHelpVerify =>
+      'अकाउंट वेरिफाई करने के लिए Profile में जाएं और Verification दबाएं। आधार, PAN और बिज़नेस दस्तावेज़ अपलोड करें। 24 घंटे में समीक्षा हो जाती है।';
+
+  @override
+  String get botHelpPricing =>
+      'TranZfort मुफ़्त है। लोड पर कोई कमीशन नहीं। Super Load पर छोटी फीस लगती है।';
+
+  @override
+  String get botHelpSupport =>
+      'मदद चाहिए? support@tranzfort.com पर ईमेल करें। या अपनी समस्या बताएं।';
+
+  @override
+  String get botDownloadAi => 'AI Assistant जल्द आ रहा है';
+
+  @override
+  String get botDownloadAiDescription => 'बेहतर जवाब और हिंदी समझ';
 
   @override
   String botAiModelSize(String size) {
@@ -1327,4 +1433,433 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get truckTypeRefrigerated => 'रेफ्रिजरेटेड';
+
+  @override
+  String get chatQuickActions => 'त्वरित क्रियाएँ';
+
+  @override
+  String get chatSendTruckDetails => 'ट्रक विवरण भेजें';
+
+  @override
+  String get chatQuoteRate => 'अपना रेट बताएं';
+
+  @override
+  String get chatQuoteRateMsg => 'इस लोड के लिए मेरा रेट ₹___ है। बताइए चलेगा?';
+
+  @override
+  String get chatConfirmAvailability => 'उपलब्धता की पुष्टि करें';
+
+  @override
+  String get chatConfirmAvailabilityMsg =>
+      'मैं इस लोड के लिए उपलब्ध हूँ। कृपया बुकिंग की पुष्टि करें।';
+
+  @override
+  String get chatShareRc => 'RC साझा करें';
+
+  @override
+  String get chatShareLoadDetails => 'लोड विवरण साझा करें';
+
+  @override
+  String get chatRequestDocuments => 'RC / दस्तावेज़ मांगें';
+
+  @override
+  String get chatRequestDocumentsMsg =>
+      'कृपया अपनी RC बुक और गाड़ी के दस्तावेज़ भेजें।';
+
+  @override
+  String get chatAskTruckDetails => 'ट्रक विवरण पूछें';
+
+  @override
+  String get chatAskTruckDetailsMsg =>
+      'अपने ट्रक की जानकारी भेजें — बॉडी टाइप, क्षमता और टायर?';
+
+  @override
+  String get chatShareLoadRate => 'लोड रेट बताएं';
+
+  @override
+  String get chatShareLoadRateMsg =>
+      'इस लोड का रेट ₹___ है। क्या आप इच्छुक हैं?';
+
+  @override
+  String get chatSendLocation => 'स्थान भेजें';
+
+  @override
+  String get chatProposeDeal => 'डील प्रस्ताव भेजें';
+
+  @override
+  String get chatNegotiatePrice => 'कीमत पर बात करें';
+
+  @override
+  String get chatNegotiatePriceMsg =>
+      'क्या हम कीमत पर बात कर सकते हैं? आपका बेस्ट रेट क्या है?';
+
+  @override
+  String get chatDealProposal => 'डील प्रस्ताव';
+
+  @override
+  String get chatDealAccepted => 'डील स्वीकृत';
+
+  @override
+  String get chatDealDeclined => 'अस्वीकृत';
+
+  @override
+  String get chatAccept => 'स्वीकार करें';
+
+  @override
+  String get chatReject => 'अस्वीकार करें';
+
+  @override
+  String get postSimilar => 'ऐसा ही पोस्ट करें';
+
+  @override
+  String get truckMatch => 'ट्रक मैच';
+
+  @override
+  String get viewMyLoads => 'मेरे लोड देखें';
+
+  @override
+  String get advance => 'अग्रिम';
+
+  @override
+  String get onLoading => 'लोडिंग पर';
+
+  @override
+  String get additional => 'अतिरिक्त';
+
+  @override
+  String get notes => 'नोट्स';
+
+  @override
+  String get savedLoads => 'सहेजे गए लोड';
+
+  @override
+  String get noSavedLoads => 'अभी तक कोई सहेजा गया लोड नहीं';
+
+  @override
+  String get loadBookmarked => 'लोड सहेजा गया';
+
+  @override
+  String get loadUnbookmarked => 'लोड हटाया गया';
+
+  @override
+  String get fleetManagement => 'बेड़ा प्रबंधन';
+
+  @override
+  String get manageFleet => 'अपने ट्रकों का बेड़ा प्रबंधित करें';
+
+  @override
+  String get offlineQueue => 'ऑनलाइन होने पर संदेश भेजे जाएंगे';
+
+  @override
+  String get messageQueued => 'संदेश भेजने के लिए कतार में है';
+
+  @override
+  String get saveDraft => 'ड्राफ्ट';
+
+  @override
+  String get helpAndSupport => 'मदद और सहायता';
+
+  @override
+  String get pleaseAllFields => 'कृपया सभी फ़ील्ड भरें';
+
+  @override
+  String get supportTicketSubmitted => 'सहायता टिकट जमा हो गया!';
+
+  @override
+  String get bookedBy => 'बुक किया';
+
+  @override
+  String get routeAndGoods => 'रूट और माल';
+
+  @override
+  String get truckRequirements => 'ट्रक की ज़रूरत';
+
+  @override
+  String get pricingSchedule => 'रेट और समय';
+
+  @override
+  String advancePercent(int percent) {
+    return 'एडवांस: $percent%';
+  }
+
+  @override
+  String get viewMyLoadsButton => 'मेरे लोड देखें';
+
+  @override
+  String get noCompletedTrips => 'अभी कोई पूर्ण ट्रिप नहीं';
+
+  @override
+  String get camera => 'कैमरा';
+
+  @override
+  String get gallery => 'गैलरी';
+
+  @override
+  String get aadhaarFrontLabel => 'आधार का अगला हिस्सा';
+
+  @override
+  String get aadhaarBackLabel => 'आधार का पिछला हिस्सा';
+
+  @override
+  String get panCardLabel => 'PAN कार्ड';
+
+  @override
+  String get dlFrontLabel => 'ड्राइविंग लाइसेंस का अगला हिस्सा';
+
+  @override
+  String get dlBackLabel => 'ड्राइविंग लाइसेंस का पिछला हिस्सा';
+
+  @override
+  String get businessLicenceLabel => 'बिज़नेस लाइसेंस';
+
+  @override
+  String get gstCertificateLabel => 'GST प्रमाण पत्र';
+
+  @override
+  String get takePhotoOrGallery => 'फोटो लें या गैलरी से चुनें';
+
+  @override
+  String uploadDocument(String documentName) {
+    return '$documentName अपलोड करें';
+  }
+
+  @override
+  String get lrUploadPrompt =>
+      'ट्रांज़िट में जाने से पहले लॉरी रसीद की फोटो अपलोड करें।';
+
+  @override
+  String get podUploadPrompt =>
+      'ट्रिप पूरी करने के लिए डिलीवरी प्रमाण की फोटो अपलोड करें।';
+
+  @override
+  String get podUploadPromptSuper =>
+      'डिलीवरी प्रमाण की फोटो अपलोड करें। एडमिन समीक्षा के बाद पूर्ण होगा।';
+
+  @override
+  String get lorryReceipt => 'लॉरी रसीद';
+
+  @override
+  String get proofOfDelivery => 'डिलीवरी प्रमाण';
+
+  @override
+  String get takePhoto => 'फोटो लें';
+
+  @override
+  String get stageNotStarted => 'शुरू नहीं हुआ';
+
+  @override
+  String get stageReachedPickup => 'उठान स्थान पहुँचे';
+
+  @override
+  String get stageLoading => 'लोड हो रहा है';
+
+  @override
+  String get stageInTransit => 'रास्ते में';
+
+  @override
+  String get stageReachedDestination => 'गंतव्य पहुँचे';
+
+  @override
+  String get stageUnloading => 'उतर रहा है';
+
+  @override
+  String get stageDelivered => 'डिलीवर हो गया';
+
+  @override
+  String get onboardingNext => 'आगे';
+
+  @override
+  String get onboardingSkip => 'छोड़ें';
+
+  @override
+  String get onboardingGetStarted => 'शुरू करें';
+
+  @override
+  String get companySection => 'कंपनी';
+
+  @override
+  String get contactSection => 'संपर्क';
+
+  @override
+  String get fleetSection => 'बेड़ा';
+
+  @override
+  String get companyNameLabel => 'कंपनी का नाम';
+
+  @override
+  String get gstNumberLabel => 'GST नंबर';
+
+  @override
+  String get typingIndicator => 'टाइप कर रहे हैं...';
+
+  @override
+  String get navNavigate => 'नेविगेट करें';
+
+  @override
+  String get navFrom => 'कहाँ से';
+
+  @override
+  String get navTo => 'कहाँ तक';
+
+  @override
+  String get navOriginHint => 'प्रस्थान शहर या पता';
+
+  @override
+  String get navDestHint => 'गंतव्य शहर या पता';
+
+  @override
+  String get navMyLocation => 'मेरा स्थान';
+
+  @override
+  String get navCurrentLocation => 'वर्तमान स्थान';
+
+  @override
+  String get navFindRoute => 'रास्ता खोजें';
+
+  @override
+  String get navRecentDestinations => 'हाल के गंतव्य';
+
+  @override
+  String get navSavedPlaces => 'सहेजे गए स्थान';
+
+  @override
+  String get navAddPlace => 'स्थान जोड़ें';
+
+  @override
+  String get navQuickTips => 'त्वरित सुझाव';
+
+  @override
+  String get navTipMyLocation =>
+      'अपना प्रस्थान स्वचालित पता लगाने के लिए \"मेरा स्थान\" दबाएं';
+
+  @override
+  String get navTipSwap => 'वापसी यात्रा के लिए प्रस्थान और गंतव्य बदलें';
+
+  @override
+  String get navTipLoadAware =>
+      'लोड-आधारित रूटिंग के लिए मेरी यात्राओं से नेविगेट करें';
+
+  @override
+  String get navRoutePreview => 'रास्ते का पूर्वावलोकन';
+
+  @override
+  String get navStartNavigation => 'नेविगेशन शुरू करें';
+
+  @override
+  String get navDieselCost => 'डीज़ल';
+
+  @override
+  String get navTollCost => 'टोल';
+
+  @override
+  String get navTotalCost => 'कुल';
+
+  @override
+  String get navEstimatedCost => 'अनुमानित यात्रा लागत';
+
+  @override
+  String get navNoRouteFound => 'इन स्थानों के बीच कोई रास्ता नहीं मिला';
+
+  @override
+  String get navCalculatingRoute => 'रास्ता गणना हो रही है...';
+
+  @override
+  String get navRerouting => 'रास्ता बदल रहा है...';
+
+  @override
+  String get navArrived => 'आप पहुँच गए!';
+
+  @override
+  String navArrivedAt(String city) {
+    return 'आप $city पहुँच गए हैं';
+  }
+
+  @override
+  String get navStopNavigation => 'नेविगेशन बंद करें?';
+
+  @override
+  String get navStopConfirm => 'क्या आप वाकई नेविगेशन बंद करना चाहते हैं?';
+
+  @override
+  String get navContinue => 'जारी रखें';
+
+  @override
+  String get navStop => 'बंद करें';
+
+  @override
+  String get navMute => 'म्यूट';
+
+  @override
+  String get navUnmute => 'अनम्यूट';
+
+  @override
+  String get navRepeat => 'दोहराएं';
+
+  @override
+  String get navReroute => 'रास्ता बदलें';
+
+  @override
+  String get navSteps => 'चरण';
+
+  @override
+  String get navAllSteps => 'सभी चरण';
+
+  @override
+  String get navGpsDisabled => 'GPS बंद है। कृपया लोकेशन सेवाएं चालू करें।';
+
+  @override
+  String get navPermDenied => 'लोकेशन अनुमति अस्वीकृत।';
+
+  @override
+  String get navPermDeniedForever =>
+      'लोकेशन अनुमति स्थायी रूप से अस्वीकृत। सेटिंग्स में चालू करें।';
+
+  @override
+  String navGpsError(String error) {
+    return 'GPS त्रुटि: $error';
+  }
+
+  @override
+  String get navSelectOrigin => 'कृपया प्रस्थान स्थान चुनें';
+
+  @override
+  String get navSelectDest => 'कृपया गंतव्य चुनें';
+
+  @override
+  String get navTrackingActive => 'TranZfort नेविगेशन चालू';
+
+  @override
+  String get navTrackingBg => 'आपकी यात्रा बैकग्राउंड में ट्रैक हो रही है';
+
+  @override
+  String get navTrackingPaused => 'ट्रैकिंग रुकी — गाड़ी खड़ी है';
+
+  @override
+  String get navDeletePlace => 'स्थान हटाएं';
+
+  @override
+  String navDeletePlaceConfirm(String label) {
+    return '\"$label\" हटाएं?';
+  }
+
+  @override
+  String get navNoSavedPlaces => 'अभी तक कोई सहेजा गया स्थान नहीं';
+
+  @override
+  String get navAddPlaceHint =>
+      'अपना घर, डिपो या पसंदीदा स्टॉप जोड़ने के लिए + दबाएं';
+
+  @override
+  String get navPlaceSaved => 'स्थान सहेजा गया!';
+
+  @override
+  String get navPlaceDeleted => 'स्थान हटाया गया';
+
+  @override
+  String navDistanceRemaining(String km) {
+    return '$km किमी बाकी';
+  }
+
+  @override
+  String get navViewRoute => 'रास्ता देखें';
 }

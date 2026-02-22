@@ -1,4 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import '../config/supabase_config.dart';
 
 class AuthService {
   final SupabaseClient _supabase;
@@ -49,7 +51,50 @@ class AuthService {
 
   Future<void> signInWithOtp({required String mobile}) async {
     final phone = _normalizeIndianPhone(mobile);
-    await _supabase.auth.signInWithOtp(phone: phone);
+    try {
+      await _supabase.auth.signInWithOtp(phone: phone);
+    } on AuthException catch (e) {
+      // Supabase returns generic errors when SMS hook (Fast2SMS) fails.
+      // Surface a user-friendly message instead of raw provider errors.
+      if (e.message.contains('invalid username') ||
+          e.message.contains('20003') ||
+          e.message.contains('sms_send_failed')) {
+        throw Exception(
+          'OTP delivery failed. Please try again or use email + password login.',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  Future<AuthResponse> signInWithGoogle() async {
+    final webClientId = SupabaseConfig.googleWebClientId;
+
+    final GoogleSignIn googleSignIn = GoogleSignIn(
+      clientId: webClientId,
+      serverClientId: webClientId,
+    );
+
+    // Force prompt for account selection by signing out first
+    await googleSignIn.signOut();
+
+    final googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      throw Exception('Google sign in was aborted');
+    }
+
+    final googleAuth = await googleUser.authentication;
+    final idToken = googleAuth.idToken;
+
+    if (idToken == null) {
+      throw Exception('No ID Token found');
+    }
+
+    return await _supabase.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+      accessToken: googleAuth.accessToken,
+    );
   }
 
   Future<AuthResponse> verifyOtp({

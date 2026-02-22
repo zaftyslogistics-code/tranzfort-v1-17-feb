@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -11,6 +13,7 @@ import '../../../../core/utils/dialogs.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/animations.dart';
 import '../../../../shared/widgets/gradient_button.dart';
+import '../../../../core/utils/duplicate_account_handler.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -47,7 +50,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
     if (!_consentChecked) {
-      AppDialogs.showSnackBar(context, '${l10n.termsOfService} ${l10n.privacyPolicy} ${l10n.agreeRequired}');
+      AppDialogs.showSnackBar(context, '${l10n.agreeTo} ${l10n.termsOfService} & ${l10n.privacyPolicy}');
       return;
     }
 
@@ -58,15 +61,31 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       final fullName =
           '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
       final mobile = '+91${_mobileController.text.trim()}';
+      final email = _emailController.text.trim();
 
-      await authService.signUpWithEmail(
-        email: _emailController.text.trim(),
+      final response = await authService.signUpWithEmail(
+        email: email,
         password: _passwordController.text,
         fullName: fullName,
         mobile: mobile,
       );
 
-      // Record consent
+      // Check if this is a duplicate account scenario
+      if (mounted) {
+        final isDuplicate = await DuplicateAccountHandler.handleDuplicateAccount(
+          context,
+          signupResponse: response,
+          email: email,
+          mobile: mobile,
+        );
+
+        if (isDuplicate) {
+          // Dialog was shown, don't continue normal flow
+          return;
+        }
+      }
+
+      // Record consent for new accounts
       final user = authService.currentUser;
       if (user != null) {
         final db = ref.read(databaseServiceProvider);
@@ -84,15 +103,297 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       invalidateAllUserProviders(ref);
 
       if (mounted) {
+        // Fallback: 'Please confirm your email, then log in.'
         AppDialogs.showSuccessSnackBar(context, l10n.accountCreatedSuccess);
         context.go('/login');
       }
     } catch (e) {
       if (mounted) {
+        // Check if error is duplicate account related
+        if (e.toString().contains('duplicate') ||
+            e.toString().contains('already exists') ||
+            e.toString().contains('already registered')) {
+          await DuplicateAccountHandler.handleDuplicateAccount(
+            context,
+            error: e,
+            email: _emailController.text.trim(),
+            mobile: '+91${_mobileController.text.trim()}',
+          );
+        } else {
+          // Not a duplicate error, show generic error
+          AppDialogs.showErrorSnackBar(context, e);
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signInWithGoogle();
+      invalidateAllUserProviders(ref);
+
+      if (!mounted) return;
+
+      // Check if Google account is already linked to existing profile
+      final user = authService.currentUser;
+      if (user != null) {
+        // Check if user already has a profile with mobile (indicates existing account)
+        final db = ref.read(databaseServiceProvider);
+        final existingProfile = await db.getUserProfile(user.id);
+        
+        if (existingProfile != null && 
+            existingProfile['mobile'] != null && 
+            existingProfile['mobile'].toString().isNotEmpty) {
+          // Account exists - show dialog
+          if (mounted) {
+            await DuplicateAccountHandler.showDuplicateAccountDialog(
+              context,
+              email: user.email ?? '',
+              mobile: existingProfile['mobile'].toString(),
+              isEmailDuplicate: true,
+            );
+          }
+          return;
+        }
+      }
+
+      // Always show the mobile+terms sheet for signup flow
+      await _showGoogleCompleteSheet();
+    } catch (e) {
+      if (mounted) {
+        if (e.toString().contains('Google sign in was aborted')) return;
         AppDialogs.showErrorSnackBar(context, e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _showGoogleCompleteSheet() async {
+    final authService = ref.read(authServiceProvider);
+    final user = authService.currentUser;
+    if (user == null || !mounted) return;
+
+    final mobileCtrl = TextEditingController();
+    final sheetFormKey = GlobalKey<FormState>();
+    bool sheetConsent = false;
+    bool sheetLoading = false;
+
+    final success = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (sheetCtx, setSheetState) {
+            final l10n = AppLocalizations.of(sheetCtx)!;
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: AppColors.scaffoldBg,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                child: Form(
+                  key: sheetFormKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Handle bar
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.borderDefault,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'One Last Step',
+                        style: AppTypography.h2Section,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Add your Indian mobile number to complete signup',
+                        style: AppTypography.bodySmall
+                            .copyWith(color: AppColors.textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      // Mobile field
+                      TextFormField(
+                        controller: mobileCtrl,
+                        decoration: InputDecoration(
+                          labelText: l10n.mobile,
+                          helperText: 'Indian numbers only (+91)',
+                          prefixIcon: Container(
+                            width: 60,
+                            alignment: Alignment.center,
+                            child: Text(
+                              '+91',
+                              style: AppTypography.bodyLarge.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.brandTeal,
+                              ),
+                            ),
+                          ),
+                        ),
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        textInputAction: TextInputAction.done,
+                        validator: Validators.indianMobile,
+                      ),
+                      const SizedBox(height: 8),
+                      // Terms checkbox
+                      CheckboxListTile(
+                        value: sheetConsent,
+                        onChanged: (v) =>
+                            setSheetState(() => sheetConsent = v ?? false),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text.rich(
+                          TextSpan(
+                            text: '${l10n.agreeTo} ',
+                            style: AppTypography.bodySmall,
+                            children: [
+                              TextSpan(
+                                text: l10n.termsOfService,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.brandTeal,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              TextSpan(text: ' ${l10n.and} '),
+                              TextSpan(
+                                text: l10n.privacyPolicy,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.brandTeal,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        activeColor: AppColors.brandTeal,
+                      ),
+                      const SizedBox(height: 20),
+                      // Complete Signup CTA
+                      FilledButton(
+                        onPressed: (sheetLoading || !sheetConsent)
+                            ? null
+                            : () async {
+                                if (!sheetFormKey.currentState!.validate()) return;
+                                setSheetState(() => sheetLoading = true);
+                                try {
+                                  final mobile = '+91${mobileCtrl.text.trim()}';
+                                  
+                                  // 1. Try to update auth metadata (non-critical, wrap in try/catch)
+                                  try {
+                                    await Supabase.instance.client.auth.updateUser(
+                                      UserAttributes(data: {'mobile': mobile}),
+                                    );
+                                  } catch (e) {
+                                    debugPrint('Non-critical: auth metadata update failed: $e');
+                                  }
+
+                                  // 2. Make sure profile exists first
+                                  await authService.ensureProfileExists();
+
+                                  // 3. Update profile with mobile number
+                                  final db = ref.read(databaseServiceProvider);
+                                  await db.updateProfile(user.id, {
+                                    'mobile': mobile,
+                                  });
+
+                                  // 4. Record consent (fire-and-forget)
+                                  db.recordConsent(
+                                    profileId: user.id,
+                                    consentType: 'terms_and_privacy',
+                                    consentVersion: '1.0',
+                                  ).ignore();
+
+                                  // 5. Invalidate profile/role providers only
+                                  ref.invalidate(userProfileProvider);
+                                  ref.invalidate(userRoleProvider);
+
+                                  if (sheetCtx.mounted) {
+                                    Navigator.of(sheetCtx).pop(true);
+                                  }
+                                } catch (e) {
+                                  setSheetState(() => sheetLoading = false);
+                                  if (sheetCtx.mounted) {
+                                    AppDialogs.showErrorSnackBar(sheetCtx, e);
+                                  }
+                                }
+                              },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.brandTeal,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: sheetLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white),
+                              )
+                            : const Text(
+                                'Complete Signup',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16),
+                              ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Cancel — signs out and stays on signup
+                      TextButton(
+                        onPressed: sheetLoading
+                            ? null
+                            : () async {
+                                Navigator.of(sheetCtx).pop(false);
+                                await authService.signOut();
+                                invalidateAllUserProviders(ref);
+                              },
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(color: AppColors.error),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (success == true && mounted) {
+      context.go('/role-selection');
     }
   }
 
@@ -289,6 +590,48 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           onPressed: (!_consentChecked || _isLoading)
                               ? null
                               : _handleSignup,
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            const Expanded(child: Divider()),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                l10n.or.toUpperCase(),
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const Expanded(child: Divider()),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        OutlinedButton.icon(
+                          onPressed: _isLoading ? null : _handleGoogleSignIn,
+                          icon: Image.asset(
+                            'assets/images/google_logo.png',
+                            height: 24,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.g_mobiledata, size: 28),
+                          ),
+                          label: Text(
+                            l10n.continueWithGoogle,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: const BorderSide(color: AppColors.borderDefault),
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 24),
                       ],

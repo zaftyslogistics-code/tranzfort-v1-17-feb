@@ -105,6 +105,8 @@ class DatabaseService {
 
   // ─── LOADS ───
 
+  static const int _loadPageSize = 50;
+
   Future<List<Map<String, dynamic>>> getActiveLoads({
     String? originCity,
     String? destCity,
@@ -112,24 +114,33 @@ class DatabaseService {
     String? sortOrder,
     bool? verifiedOnly,
     String? materialFilter,
+    List<String>? materialList,
     double? minWeight,
     double? maxWeight,
+    String? pickupDateFrom,
+    double? minPrice,
+    double? maxPrice,
+    int page = 0,
   }) async {
     var query = _supabase
         .from('loads')
         .select()
         .eq('status', 'active');
 
+    // P1-12: Prefix match instead of contains — prevents "Pur" matching "Jaipur"
     if (originCity != null && originCity.isNotEmpty) {
-      query = query.ilike('origin_city', '%$originCity%');
+      query = query.ilike('origin_city', '$originCity%');
     }
     if (destCity != null && destCity.isNotEmpty) {
-      query = query.ilike('dest_city', '%$destCity%');
+      query = query.ilike('dest_city', '$destCity%');
     }
     if (truckType != null && truckType.isNotEmpty && truckType != 'Any') {
       query = query.eq('required_truck_type', truckType.toLowerCase());
     }
-    if (materialFilter != null && materialFilter != 'Any') {
+    // P0-5: Category-based material filter (list of materials)
+    if (materialList != null && materialList.isNotEmpty) {
+      query = query.inFilter('material', materialList);
+    } else if (materialFilter != null && materialFilter != 'Any') {
       query = query.ilike('material', '%$materialFilter%');
     }
     if (minWeight != null) {
@@ -138,43 +149,35 @@ class DatabaseService {
     if (maxWeight != null) {
       query = query.lte('weight_tonnes', maxWeight);
     }
-
-    // Apply sorting at DB level
-    final response = sortOrder == 'price_high'
-        ? await query.order('price', ascending: false)
-        : sortOrder == 'price_low'
-            ? await query.order('price', ascending: true)
-            : await query.order('created_at', ascending: false);
-    var loads = List<Map<String, dynamic>>.from(response);
-
-    // Apply verified supplier filter in memory (direct lookup via public_profiles).
-    // This avoids brittle relation-hint joins that can fail on schema cache drift.
-    if (verifiedOnly == true) {
-      final supplierIds = loads
-          .map((load) => load['supplier_id'] as String?)
-          .whereType<String>()
-          .toSet()
-          .toList();
-
-      if (supplierIds.isEmpty) return [];
-
-      final profiles = await _supabase
-          .from('public_profiles')
-          .select('id, verification_status')
-          .inFilter('id', supplierIds);
-
-      final verifiedSupplierIds = (profiles as List)
-          .where((profile) => profile['verification_status'] == 'verified')
-          .map((profile) => profile['id'] as String)
-          .toSet();
-
-      loads = loads.where((load) {
-        final supplierId = load['supplier_id'] as String?;
-        return supplierId != null && verifiedSupplierIds.contains(supplierId);
-      }).toList();
+    // P1-8: Pickup date filter
+    if (pickupDateFrom != null && pickupDateFrom.isNotEmpty) {
+      query = query.gte('pickup_date', pickupDateFrom);
+    }
+    // P1-9: Price range filter
+    if (minPrice != null) {
+      query = query.gte('price', minPrice);
+    }
+    if (maxPrice != null) {
+      query = query.lte('price', maxPrice);
     }
 
-    return loads;
+    // P1-4: DB-level verified supplier filter
+    if (verifiedOnly == true) {
+      query = query.eq('is_verified_supplier', true);
+    }
+
+    // P1-4: Pagination
+    final from = page * _loadPageSize;
+    final to = from + _loadPageSize - 1;
+
+    // Apply sorting + pagination at DB level
+    final response = sortOrder == 'price_high'
+        ? await query.order('price', ascending: false).range(from, to)
+        : sortOrder == 'price_low'
+            ? await query.order('price', ascending: true).range(from, to)
+            : await query.order('created_at', ascending: false).range(from, to);
+
+    return List<Map<String, dynamic>>.from(response);
   }
 
   Future<Map<String, dynamic>?> getLoadById(String id) async {
@@ -194,6 +197,18 @@ class DatabaseService {
 
   Future<void> updateLoad(
       String id, Map<String, dynamic> data) async {
+    // Phase 2D: Guard — only allow updates on draft/active loads
+    // (booking/in_transit/completed loads are immutable except via dedicated methods)
+    final current = await _supabase
+        .from('loads')
+        .select('status')
+        .eq('id', id)
+        .maybeSingle();
+    final status = current?['status'] as String?;
+    const mutableStatuses = ['draft', 'active'];
+    if (status != null && !mutableStatuses.contains(status)) {
+      throw Exception('Cannot edit load in "$status" status');
+    }
     await _supabase.from('loads').update(data).eq('id', id);
   }
 
@@ -208,6 +223,81 @@ class DatabaseService {
 
   Future<void> incrementLoadViews(String loadId) async {
     await _supabase.rpc('increment_load_views', params: {'load_uuid': loadId});
+  }
+
+  // ─── DEAL / BOOKING ───
+
+  Future<void> acceptDeal({
+    required String loadId,
+    required String truckerId,
+    String? truckId,
+  }) async {
+    await _supabase.from('loads').update({
+      'status': 'booked',
+      'assigned_trucker_id': truckerId,
+      // ignore: use_null_aware_elements
+      if (truckId != null) 'assigned_truck_id': truckId,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', loadId);
+  }
+
+  /// Direct booking: trucker requests to book a load.
+  /// Uses atomic server-side function to prevent double-booking.
+  Future<void> bookLoad({
+    required String loadId,
+    required String truckerId,
+    required String truckId,
+  }) async {
+    final result = await _supabase.rpc('book_load', params: {
+      'p_load_id': loadId,
+      'p_trucker_id': truckerId,
+      'p_truck_id': truckId,
+    });
+    final data = result as Map<String, dynamic>;
+    if (data['success'] != true) {
+      throw Exception(data['message'] ?? 'Booking failed');
+    }
+  }
+
+  /// Supplier approves a booking request.
+  /// Uses atomic server-side function to prevent race conditions.
+  Future<void> approveBooking(String loadId) async {
+    final load = await getLoadById(loadId);
+    if (load == null) throw Exception('Load not found');
+
+    final result = await _supabase.rpc('approve_booking', params: {
+      'p_load_id': loadId,
+      'p_expected_trucker_id': load['booked_by_trucker_id'],
+    });
+    final data = result as Map<String, dynamic>;
+    if (data['success'] != true) {
+      throw Exception(data['message'] ?? 'Approval failed');
+    }
+  }
+
+  /// Supplier rejects a booking request — load goes back to active.
+  /// Uses atomic server-side function for consistency.
+  Future<void> rejectBooking(String loadId) async {
+    final result = await _supabase.rpc('reject_booking', params: {
+      'p_load_id': loadId,
+    });
+    final data = result as Map<String, dynamic>;
+    if (data['success'] != true) {
+      throw Exception(data['message'] ?? 'Rejection failed');
+    }
+  }
+
+  /// Returns the trucker's first verified truck (default for booking).
+  Future<Map<String, dynamic>?> getDefaultTruck(String ownerId) async {
+    final response = await _supabase
+        .from('trucks')
+        .select()
+        .eq('owner_id', ownerId)
+        .eq('status', 'verified')
+        .order('created_at', ascending: true)
+        .limit(1)
+        .maybeSingle();
+    return response;
   }
 
   // ─── TRIPS (trucker assigned loads) ───
@@ -248,6 +338,71 @@ class DatabaseService {
     await _supabase.from('loads').update(data).eq('id', loadId);
   }
 
+  // ─── PAYMENT LEDGER ───
+
+  Future<void> logPayment({
+    required String loadId,
+    required String payerId,
+    required String paymentType,
+    required double amount,
+    String? paymentMethod,
+    String? referenceNumber,
+    String? notes,
+  }) async {
+    await _supabase.from('payment_ledger').insert({
+      'load_id': loadId,
+      'payer_id': payerId,
+      'payment_type': paymentType,
+      'amount': amount,
+      if (paymentMethod != null) 'payment_method': paymentMethod,
+      if (referenceNumber != null && referenceNumber.isNotEmpty)
+        'reference_number': referenceNumber,
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getPaymentsForLoad(String loadId) async {
+    final response = await _supabase
+        .from('payment_ledger')
+        .select()
+        .eq('load_id', loadId)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  // ─── RATINGS ───
+
+  Future<void> submitRating({
+    required String loadId,
+    required String reviewerId,
+    required String revieweeId,
+    required String reviewerRole,
+    required int score,
+    String? comment,
+  }) async {
+    await _supabase.from('ratings').insert({
+      'load_id': loadId,
+      'reviewer_id': reviewerId,
+      'reviewee_id': revieweeId,
+      'reviewer_role': reviewerRole,
+      'score': score,
+      if (comment != null && comment.isNotEmpty) 'comment': comment,
+    });
+  }
+
+  Future<bool> hasRated({
+    required String loadId,
+    required String reviewerId,
+  }) async {
+    final result = await _supabase
+        .from('ratings')
+        .select('id')
+        .eq('load_id', loadId)
+        .eq('reviewer_id', reviewerId)
+        .maybeSingle();
+    return result != null;
+  }
+
   // ─── TRUCKS ───
 
   Future<List<Map<String, dynamic>>> getMyTrucks(String ownerId) async {
@@ -275,7 +430,16 @@ class DatabaseService {
   }
 
   Future<void> deleteTruck(String truckId) async {
-    await _supabase.from('trucks').delete().eq('id', truckId);
+    final deleted = await _supabase
+        .from('trucks')
+        .delete()
+        .eq('id', truckId)
+        .select('id')
+        .maybeSingle();
+
+    if (deleted == null) {
+      throw Exception('Truck delete failed: not found or not permitted');
+    }
   }
 
   Future<List<Map<String, dynamic>>> getVerifiedTrucks(
@@ -379,16 +543,30 @@ class DatabaseService {
     final truckers = conv['truckers'] as Map<String, dynamic>?;
     final supplierProfile = suppliers?['profiles'] as Map<String, dynamic>?;
     final truckerProfile = truckers?['profiles'] as Map<String, dynamic>?;
-    conv['supplier_name'] = _resolveName(supplierProfile);
-    conv['trucker_name'] = _resolveName(truckerProfile);
+    conv['supplier_name'] = _resolveName(supplierProfile, 'Supplier');
+    conv['trucker_name'] = _resolveName(truckerProfile, 'Trucker');
     conv['supplier_avatar'] = supplierProfile?['avatar_url'] as String?;
     conv['trucker_avatar'] = truckerProfile?['avatar_url'] as String?;
   }
 
-  String _resolveName(Map<String, dynamic>? profile) {
-    if (profile == null) return 'User';
+  String _resolveName(Map<String, dynamic>? profile, [String fallback = 'User']) {
+    if (profile == null) return fallback;
     final name = profile['full_name'] as String?;
     if (name != null && name.isNotEmpty) return name;
+    return fallback;
+  }
+
+  /// MSG-1: Direct profile lookup by user ID — used when FK join fails.
+  Future<String> getUserDisplayName(String userId) async {
+    try {
+      final row = await _supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', userId)
+          .maybeSingle();
+      final name = row?['full_name'] as String?;
+      if (name != null && name.isNotEmpty) return name;
+    } catch (_) {}
     return 'User';
   }
 
@@ -427,13 +605,15 @@ class DatabaseService {
   // ─── MESSAGES ───
 
   Future<List<Map<String, dynamic>>> getMessages(
-      String conversationId) async {
+      String conversationId, {int limit = 50, int offset = 0}) async {
     final response = await _supabase
         .from('messages')
         .select()
         .eq('conversation_id', conversationId)
-        .order('created_at', ascending: true);
-    return List<Map<String, dynamic>>.from(response);
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1);
+    // Reverse so oldest first for display
+    return List<Map<String, dynamic>>.from(response).reversed.toList();
   }
 
   Future<Map<String, dynamic>> sendMessage({

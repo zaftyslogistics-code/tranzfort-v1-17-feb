@@ -10,6 +10,7 @@ class TruckModel {
   final String? rejectionReason;
   final DateTime? verifiedAt;
   final DateTime? createdAt;
+  final String? truckModelId;
 
   const TruckModel({
     this.id,
@@ -23,6 +24,7 @@ class TruckModel {
     this.rejectionReason,
     this.verifiedAt,
     this.createdAt,
+    this.truckModelId,
   });
 
   factory TruckModel.fromJson(Map<String, dynamic> json) {
@@ -42,6 +44,7 @@ class TruckModel {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
+      truckModelId: json['truck_model_id'] as String?,
     );
   }
 
@@ -54,6 +57,7 @@ class TruckModel {
       'tyres': tyres,
       'capacity_tonnes': capacityTonnes,
       'rc_photo_url': rcPhotoUrl,
+      if (truckModelId != null) 'truck_model_id': truckModelId,
     };
   }
 

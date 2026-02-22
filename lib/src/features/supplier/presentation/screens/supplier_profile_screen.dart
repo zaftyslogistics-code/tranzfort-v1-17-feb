@@ -4,6 +4,7 @@ import '../../../../core/utils/dialogs.dart';
 import '../../../../core/utils/validators.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -11,6 +12,8 @@ import '../../../../core/providers/auth_service_provider.dart';
 import '../../../../shared/widgets/app_drawer.dart';
 import '../../../../shared/widgets/status_chip.dart';
 import '../../../../shared/widgets/stat_card.dart';
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/widgets/tts_button.dart';
 
 class SupplierProfileScreen extends ConsumerWidget {
   const SupplierProfileScreen({super.key});
@@ -34,7 +37,19 @@ class SupplierProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('My Profile')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.profile),
+        actions: [
+          TtsButton(
+            text: 'Read aloud',
+            spokenText: ref.watch(localeProvider).languageCode == 'hi'
+                ? 'प्रोफाइल। नाम: $name। कंपनी: $companyName। वेरिफिकेशन: ${verificationStatus == 'verified' ? 'वेरिफाइड' : 'वेरिफाइ नहीं हुआ'}। एक्टिव लोड: ${activeLoadsAsync.valueOrNull ?? 0}।'
+                : 'Profile. Name: $name. Company: $companyName. Verification: ${verificationStatus == 'verified' ? 'Verified' : 'Not verified'}. Active loads: ${activeLoadsAsync.valueOrNull ?? 0}.',
+            locale: ref.watch(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-IN',
+            size: 22,
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(AppSpacing.screenPaddingH),

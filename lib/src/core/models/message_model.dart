@@ -43,10 +43,10 @@ class MessageModel {
       voiceDurationSeconds: json['voice_duration_seconds'] as int?,
       isRead: json['is_read'] as bool? ?? false,
       readAt: json['read_at'] != null
-          ? DateTime.parse(json['read_at'] as String)
+          ? DateTime.parse(json['read_at'] as String).toLocal()
           : null,
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+          ? DateTime.parse(json['created_at'] as String).toLocal()
           : null,
     );
   }

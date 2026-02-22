@@ -87,7 +87,7 @@ void main() {
     test('Login screen invalidates providers and navigates by role', () {
       expect(loginSource, contains('invalidateAllUserProviders'));
       expect(loginSource, contains('/supplier-dashboard'));
-      expect(loginSource, contains('/find-loads'));
+      expect(loginSource, contains('/trucker-dashboard'));
     });
 
     test('Role selection creates role-specific data idempotently', () {

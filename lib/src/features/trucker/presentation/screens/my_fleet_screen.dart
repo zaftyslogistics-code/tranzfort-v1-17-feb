@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -13,6 +14,8 @@ import '../../../../core/utils/animations.dart';
 import '../../../../core/utils/dialogs.dart';
 import '../../../../shared/widgets/error_retry.dart';
 import '../../../../shared/widgets/status_chip.dart';
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/widgets/tts_button.dart';
 
 final _myTrucksProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -31,7 +34,22 @@ class MyFleetScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('My Fleet')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.myFleet),
+        actions: [
+          trucksAsync.whenData((trucks) {
+            final isHi = ref.watch(localeProvider).languageCode == 'hi';
+            return TtsButton(
+              text: 'Read aloud',
+              spokenText: isHi
+                  ? 'मेरा बेड़ा। आपके ${trucks.length} ट्रक रजिस्टर्ड हैं।'
+                  : 'My Fleet. You have ${trucks.length} trucks registered.',
+              locale: isHi ? 'hi-IN' : 'en-IN',
+              size: 22,
+            );
+          }).valueOrNull ?? const SizedBox.shrink(),
+        ],
+      ),
       bottomNavigationBar: const BottomNavBar(currentRole: 'trucker'),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/add-truck'),
@@ -50,9 +68,9 @@ class MyFleetScreen extends ConsumerWidget {
           if (trucks.isEmpty) {
             return EmptyState(
               icon: Icons.local_shipping_outlined,
-              title: 'No trucks added',
-              description: 'Add your first truck to start finding loads',
-              actionLabel: 'Add Truck',
+              title: AppLocalizations.of(context)!.noTrucksYet,
+              description: AppLocalizations.of(context)!.addYourFirstTruck,
+              actionLabel: AppLocalizations.of(context)!.addTruck,
               onAction: () => context.push('/add-truck'),
             );
           }
@@ -85,11 +103,12 @@ class _TruckCard extends ConsumerWidget {
 
   Future<void> _deleteTruck(BuildContext context, WidgetRef ref) async {
     final truckNumber = truck['truck_number'] as String? ?? 'this truck';
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await AppDialogs.confirm(
       context,
-      title: 'Delete Truck',
-      description: 'Remove $truckNumber? This cannot be undone.',
-      confirmText: 'Delete',
+      title: l10n.delete,
+      description: '${l10n.delete} $truckNumber?',
+      confirmText: l10n.delete,
       isDestructive: true,
     );
     if (confirmed != true) return;
@@ -154,7 +173,7 @@ class _TruckCard extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.delete_outline,
                     size: 20, color: AppColors.textTertiary),
-                tooltip: 'Delete truck',
+                tooltip: AppLocalizations.of(context)!.delete,
                 onPressed: () => _deleteTruck(context, ref),
               ),
             ],

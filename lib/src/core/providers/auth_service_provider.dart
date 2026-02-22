@@ -4,8 +4,11 @@ import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import '../services/storage_service.dart';
 import '../services/city_search_service.dart';
+import '../services/truck_model_service.dart';
 import '../services/tts_service.dart';
 import '../services/permission_service.dart';
+import '../services/notification_service.dart';
+import '../services/google_places_service.dart';
 
 // ─── SERVICE PROVIDERS ───
 
@@ -25,6 +28,10 @@ final citySearchServiceProvider = Provider<CitySearchService>((ref) {
   return CitySearchService();
 });
 
+final truckModelServiceProvider = Provider<TruckModelService>((ref) {
+  return TruckModelService();
+});
+
 final ttsServiceProvider = Provider<TtsService>((ref) {
   final tts = TtsService();
   tts.init();
@@ -34,6 +41,27 @@ final ttsServiceProvider = Provider<TtsService>((ref) {
 
 final permissionServiceProvider = Provider<PermissionService>((ref) {
   return PermissionService();
+});
+
+final googlePlacesServiceProvider = Provider<GooglePlacesService>((ref) {
+  final service = GooglePlacesService();
+  ref.onDispose(() => service.dispose());
+  return service;
+});
+
+final notificationServiceProvider = Provider<NotificationService>((ref) {
+  final service = NotificationService(Supabase.instance.client);
+  ref.onDispose(() => service.dispose());
+  return service;
+});
+
+final unreadNotificationsCountProvider = StreamProvider<int>((ref) {
+  final service = ref.watch(notificationServiceProvider);
+  final userId = ref.read(authServiceProvider).currentUser?.id;
+  if (userId != null) {
+    service.startListening(userId);
+  }
+  return service.unreadCountStream;
 });
 
 // ─── AUTH STATE PROVIDERS ───
@@ -121,9 +149,11 @@ final truckerActiveTripsCountProvider = FutureProvider<int>((ref) async {
   if (userId == null) return 0;
 
   final db = ref.read(databaseServiceProvider);
-  final truckerData = await db.getTruckerData(userId);
-  return (truckerData?['total_trips'] as int? ?? 0) -
-      (truckerData?['completed_trips'] as int? ?? 0);
+  final trips = await db.getMyTrips(userId);
+  return trips
+      .where((l) =>
+          l['status'] == 'booked' || l['status'] == 'in_transit')
+      .length;
 });
 
 final truckerFleetCountProvider = FutureProvider<int>((ref) async {
@@ -142,8 +172,8 @@ final truckerTotalTripsProvider = FutureProvider<int>((ref) async {
   if (userId == null) return 0;
 
   final db = ref.read(databaseServiceProvider);
-  final truckerData = await db.getTruckerData(userId);
-  return truckerData?['total_trips'] as int? ?? 0;
+  final trips = await db.getMyTrips(userId);
+  return trips.length;
 });
 
 final truckerRatingProvider = FutureProvider<double>((ref) async {
@@ -181,9 +211,9 @@ final truckerCompletionRateProvider = FutureProvider<double>((ref) async {
   if (userId == null) return 0.0;
 
   final db = ref.read(databaseServiceProvider);
-  final truckerData = await db.getTruckerData(userId);
-  final total = truckerData?['total_trips'] as int? ?? 0;
-  final completed = truckerData?['completed_trips'] as int? ?? 0;
+  final trips = await db.getMyTrips(userId);
+  final total = trips.length;
+  final completed = trips.where((l) => l['status'] == 'completed').length;
   if (total == 0) return 0.0;
   return (completed / total) * 100;
 });

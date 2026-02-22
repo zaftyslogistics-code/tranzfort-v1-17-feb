@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -12,7 +12,11 @@ import '../../../../core/utils/dialogs.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../../../../shared/widgets/skeleton_loader.dart';
 import '../../../../shared/widgets/stat_card.dart';
+import '../../../../shared/widgets/language_toggle_button.dart';
 import '../../../../core/services/smart_defaults_service.dart';
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/widgets/tts_button.dart';
+import '../../../../shared/widgets/notification_bell.dart';
 
 class SupplierDashboardScreen extends ConsumerWidget {
   const SupplierDashboardScreen({super.key});
@@ -36,13 +40,31 @@ class SupplierDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.dashboard),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => context.push('/messages'),
+          TtsButton(
+            text: 'Read aloud',
+            spokenText: ref.watch(localeProvider).languageCode == 'hi'
+                ? 'नमस्ते $userName। आपके ${activeLoadsAsync.valueOrNull ?? 0} एक्टिव लोड हैं। वेरिफिकेशन स्थिति: ${verificationStatus == 'verified' ? 'वेरिफाइड' : 'वेरिफाइ नहीं हुआ'}।'
+                : 'Welcome $userName. You have ${activeLoadsAsync.valueOrNull ?? 0} active loads. Verification: ${verificationStatus == 'verified' ? 'Verified' : 'Not verified'}.',
+            locale: ref.watch(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-IN',
+            size: 22,
           ),
+          const LanguageToggleButton(),
+          const NotificationBell(),
         ],
       ),
       bottomNavigationBar: const BottomNavBar(currentRole: 'supplier'),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/bot-chat'),
+        backgroundColor: Colors.white,
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Image.asset(
+            'assets/images/bot-avatar.png',
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
       body: RefreshIndicator(
         color: AppColors.brandTeal,
         onRefresh: () async {
@@ -59,7 +81,7 @@ class SupplierDashboardScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Welcome
-              Text(l10n.welcomeUser(name: userName), style: AppTypography.h1Hero),
+              Text(l10n.welcomeUser(userName), style: AppTypography.h1Hero),
               const SizedBox(height: 4),
               if (!isVerified)
                 GestureDetector(

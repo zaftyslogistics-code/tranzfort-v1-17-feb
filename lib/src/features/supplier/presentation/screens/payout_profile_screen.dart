@@ -9,6 +9,9 @@ import '../../../../core/utils/dialogs.dart';
 import '../../../../shared/widgets/app_drawer.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../../../../shared/widgets/status_chip.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/widgets/tts_button.dart';
 
 class PayoutProfileScreen extends ConsumerStatefulWidget {
   const PayoutProfileScreen({super.key});
@@ -105,8 +108,16 @@ class _PayoutProfileScreenState extends ConsumerState<PayoutProfileScreen> {
       backgroundColor: AppColors.scaffoldBg,
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Payout Profile'),
+        title: Text(AppLocalizations.of(context)!.payoutProfile),
         actions: [
+          TtsButton(
+            text: 'Read aloud',
+            spokenText: ref.watch(localeProvider).languageCode == 'hi'
+                ? 'पेआउट प्रोफाइल। अपना बैंक खाता विवरण यहां दर्ज करें ताकि भुगतान मिल सके।'
+                : 'Payout Profile. Enter your bank account details here to receive payments.',
+            locale: ref.watch(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-IN',
+            size: 22,
+          ),
           if (_existingPayout != null)
             Padding(
               padding: const EdgeInsets.only(right: 16),

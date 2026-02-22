@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -14,12 +15,23 @@ import '../../../../shared/widgets/gradient_button.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../core/utils/animations.dart';
 import '../../../../shared/widgets/scroll_to_top_fab.dart';
-import '../../../../shared/widgets/stat_card.dart';
+import '../../../../core/constants/load_constants.dart';
 import '../../../../core/services/smart_defaults_service.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/tts_button.dart';
+import '../../../../shared/widgets/language_toggle_button.dart';
 
 class FindLoadsScreen extends ConsumerStatefulWidget {
-  const FindLoadsScreen({super.key});
+  final String? initialOrigin;
+  final String? initialDestination;
+  final bool autoSearch;
+
+  const FindLoadsScreen({
+    super.key,
+    this.initialOrigin,
+    this.initialDestination,
+    this.autoSearch = false,
+  });
 
   @override
   ConsumerState<FindLoadsScreen> createState() => _FindLoadsScreenState();
@@ -29,35 +41,154 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
   final _fromController = TextEditingController();
   final _toController = TextEditingController();
   String _truckType = 'Any';
-  bool _hasSearched = false;
   bool _isSearching = false;
   List<Map<String, dynamic>> _results = [];
   String _sortOrder = 'none';
   final _resultsScrollController = ScrollController();
+  int _currentPage = 0;
+  bool _hasMorePages = true;
+  bool _isLoadingMore = false;
 
   // New filters
   bool _verifiedOnly = false;
   String? _materialFilter;
   double? _minWeight;
   double? _maxWeight;
+  bool _showSearchBar = false;
+  bool _initialLoadDone = false;
+  List<Map<String, dynamic>> _myTrucks = []; // TRK-1: for match indicator
+  Set<String> _bookmarkedIds = {}; // TRK-2: saved loads
+  bool _truckMatchOnly = false; // P0-6: My Truck Match filter
+  String? _pickupDateFilter; // P1-8: pickup date filter
+  double? _minPrice; // P1-9: price range filter
+  double? _maxPrice;
 
   static const _truckTypes = ['Any', 'Open', 'Container', 'Trailer', 'Tanker'];
-  static const _commonMaterials = ['Any', 'Steel', 'Cement', 'Coal', 'Agriculture', 'FMCG', 'Construction', 'Containers'];
-  static const _weightRanges = ['Any', '10-20T', '20-30T', '30T+'];
+  static final _commonMaterials = LoadConstants.filterMaterials; // P0-5: smart categories
+  static const _weightRanges = ['Any', '0-10T', '10-20T', '20-30T', '30T+']; // P0-7: added 0-10T
+  static const _priceRanges = ['Any', '₹0-1500', '₹1500-2500', '₹2500-4000', '₹4000+'];
+  static const _dateFilters = ['Any', 'Today', 'Tomorrow', 'This Week'];
 
   @override
   void initState() {
     super.initState();
-    _loadDefaults();
+    _loadInitialState();
+    _loadMyTrucks();
+    _loadBookmarks();
+    _resultsScrollController.addListener(_onScroll);
   }
 
-  Future<void> _loadDefaults() async {
-    final (origin, dest) = await SmartDefaults.getLastSearch();
-    if (origin != null && _fromController.text.isEmpty) {
-      _fromController.text = origin;
+  Future<void> _loadBookmarks() async {
+    final ids = await SmartDefaults.getBookmarkedLoadIds();
+    if (mounted) setState(() => _bookmarkedIds = ids.toSet());
+  }
+
+  Future<void> _toggleBookmark(String loadId) async {
+    await SmartDefaults.toggleBookmark(loadId);
+    setState(() {
+      if (_bookmarkedIds.contains(loadId)) {
+        _bookmarkedIds.remove(loadId);
+      } else {
+        _bookmarkedIds.add(loadId);
+      }
+    });
+  }
+
+  Future<void> _loadMyTrucks() async {
+    final userId = ref.read(authServiceProvider).currentUser?.id;
+    if (userId == null) return;
+    try {
+      final trucks = await ref.read(databaseServiceProvider).getMyTrucks(userId);
+      if (mounted) setState(() => _myTrucks = trucks);
+    } catch (_) {}
+  }
+
+  bool _truckMatchesLoad(Map<String, dynamic> load) {
+    if (_myTrucks.isEmpty) return false;
+    final reqType = (load['required_truck_type'] as String?)?.toLowerCase();
+    final reqTyres = load['required_tyres'];
+    for (final truck in _myTrucks) {
+      final truckType = (truck['body_type'] as String?)?.toLowerCase();
+      final truckTyres = truck['tyres'];
+      final typeMatch = reqType == null || reqType.isEmpty || truckType == reqType;
+      final tyreMatch = reqTyres == null ||
+          (reqTyres is List && reqTyres.isEmpty) ||
+          (truckTyres != null && reqTyres is List && reqTyres.contains(truckTyres));
+      if (typeMatch && tyreMatch) return true;
     }
-    if (dest != null && _toController.text.isEmpty) {
-      _toController.text = dest;
+    return false;
+  }
+
+  Future<void> _loadInitialState() async {
+    final (origin, dest) = await SmartDefaults.getLastSearch();
+    if (!mounted) return;
+
+    final initialOrigin = widget.initialOrigin?.trim();
+    final initialDestination = widget.initialDestination?.trim();
+
+    setState(() {
+      _fromController.text =
+          (initialOrigin != null && initialOrigin.isNotEmpty)
+              ? initialOrigin
+              : (origin ?? _fromController.text);
+      _toController.text =
+          (initialDestination != null && initialDestination.isNotEmpty)
+              ? initialDestination
+              : (dest ?? _toController.text);
+    });
+
+    // Always fetch loads on screen open — truckers see all loads by default
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchLoads();
+    });
+  }
+
+  void _onScroll() {
+    if (_resultsScrollController.position.pixels >=
+            _resultsScrollController.position.maxScrollExtent - 200 &&
+        !_isLoadingMore &&
+        _hasMorePages) {
+      _loadMoreResults();
+    }
+  }
+
+  Future<void> _loadMoreResults() async {
+    if (_isLoadingMore || !_hasMorePages) return;
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final db = ref.read(databaseServiceProvider);
+      final nextPage = _currentPage + 1;
+
+      List<String>? materialList;
+      if (_materialFilter != null && _materialFilter != 'Any') {
+        materialList = LoadConstants.categoryMaterialMap[_materialFilter!];
+      }
+
+      final moreResults = await db.getActiveLoads(
+        originCity: _fromController.text.trim(),
+        destCity: _toController.text.trim(),
+        truckType: _truckType,
+        sortOrder: _sortOrder,
+        verifiedOnly: _verifiedOnly,
+        materialList: materialList,
+        minWeight: _minWeight,
+        maxWeight: _maxWeight,
+        pickupDateFrom: _getPickupDateFrom(),
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
+        page: nextPage,
+      );
+
+      setState(() {
+        _currentPage = nextPage;
+        _results.addAll(moreResults);
+        _hasMorePages = moreResults.length >= 50;
+      });
+    } catch (_) {
+      // Silently fail on pagination errors
+    } finally {
+      if (mounted) setState(() => _isLoadingMore = false);
     }
   }
 
@@ -65,6 +196,7 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
   void dispose() {
     _fromController.dispose();
     _toController.dispose();
+    _resultsScrollController.removeListener(_onScroll);
     _resultsScrollController.dispose();
     super.dispose();
   }
@@ -75,15 +207,25 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
 
     try {
       final db = ref.read(databaseServiceProvider);
+
+      // P0-5: Resolve category filter to material list
+      List<String>? materialList;
+      if (_materialFilter != null && _materialFilter != 'Any') {
+        materialList = LoadConstants.categoryMaterialMap[_materialFilter!];
+      }
+
       final results = await db.getActiveLoads(
         originCity: _fromController.text.trim(),
         destCity: _toController.text.trim(),
         truckType: _truckType,
         sortOrder: _sortOrder,
         verifiedOnly: _verifiedOnly,
-        materialFilter: _materialFilter,
+        materialList: materialList,
         minWeight: _minWeight,
         maxWeight: _maxWeight,
+        pickupDateFrom: _getPickupDateFrom(),
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
       );
 
       // Save search defaults for next time
@@ -94,7 +236,9 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
 
       setState(() {
         _results = results;
-        _hasSearched = true;
+        _currentPage = 0;
+        _hasMorePages = results.length >= 50;
+        _initialLoadDone = true;
       });
     } catch (e) {
       if (mounted) {
@@ -107,8 +251,19 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
 
   List<Map<String, dynamic>> get _filteredAndSortedResults {
     // Results are already filtered and sorted by DB query
-    // Only client-side filter remaining is for cases where we need complex logic
-    return _results;
+    // P0-6: Apply truck match filter client-side
+    var filtered = _results;
+    if (_truckMatchOnly && _myTrucks.isNotEmpty) {
+      filtered = filtered.where((load) => _truckMatchesLoad(load)).toList();
+    }
+    // Phase 3E: Super Loads always on top
+    filtered.sort((a, b) {
+      final aSuper = a['is_super_load'] == true ? 0 : 1;
+      final bSuper = b['is_super_load'] == true ? 0 : 1;
+      if (aSuper != bSuper) return aSuper.compareTo(bSuper);
+      return 0; // preserve DB sort order within same tier
+    });
+    return filtered;
   }
 
   String _formatTimeAgo(String? dateStr) {
@@ -125,14 +280,47 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
     }
   }
 
+  bool get _hasActiveFilters =>
+      _verifiedOnly ||
+      _truckMatchOnly ||
+      _materialFilter != null ||
+      _minWeight != null ||
+      _maxWeight != null ||
+      _pickupDateFilter != null ||
+      _minPrice != null ||
+      _maxPrice != null ||
+      _fromController.text.trim().isNotEmpty ||
+      _toController.text.trim().isNotEmpty ||
+      _truckType != 'Any';
+
   @override
   Widget build(BuildContext context) {
+    final sorted = _filteredAndSortedResults;
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Find Loads'),
+        title: Text(AppLocalizations.of(context)!.findLoads),
         actions: [
+          TtsButton(
+            text: 'Read aloud',
+            spokenText: ref.watch(localeProvider).languageCode == 'hi'
+                ? 'लोढ ढूंढें। ऑरिजिन से डेस्टिनेशन तक लोड खोजें। फिल्टर लगाकर सही ट्रक ढूंढें।'
+                : 'Find loads. Search loads from origin to destination. Apply filters to find the right truck.',
+            locale: ref.watch(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-IN',
+            size: 22,
+          ),
+          // Search toggle
+          IconButton(
+            icon: Icon(
+              _showSearchBar ? Icons.search_off : Icons.search,
+              color: _showSearchBar ? AppColors.brandTeal : null,
+            ),
+            onPressed: () => setState(() => _showSearchBar = !_showSearchBar),
+            tooltip: AppLocalizations.of(context)!.search,
+          ),
+          const LanguageToggleButton(),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () => context.push('/messages'),
@@ -140,307 +328,345 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
         ],
       ),
       bottomNavigationBar: const BottomNavBar(currentRole: 'trucker'),
-      floatingActionButton: _hasSearched
-          ? ScrollToTopFab(scrollController: _resultsScrollController)
-          : null,
-      body: _hasSearched ? _buildResults() : _buildPreSearch(),
-    );
-  }
-
-  Widget _buildPreSearch() {
-    final activeTripsAsync = ref.watch(truckerActiveTripsCountProvider);
-    final totalTripsAsync = ref.watch(truckerTotalTripsProvider);
-
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(AppSpacing.screenPaddingH),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      floatingActionButton: ScrollToTopFab(scrollController: _resultsScrollController),
+      body: Column(
         children: [
-          Text('Find loads for\nyour return trip.',
-              style: AppTypography.h1Hero),
-          const SizedBox(height: 24),
-
-          // Quick stats
-          Row(
-            children: [
-              Expanded(
-                child: StatCard(
-                  icon: Icons.assignment,
-                  value: '${activeTripsAsync.valueOrNull ?? 0}',
-                  label: 'Active Trips',
-                  onTap: () => context.go('/my-trips'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.cardGap),
-              Expanded(
-                child: StatCard(
-                  icon: Icons.check_circle,
-                  value: '${totalTripsAsync.valueOrNull ?? 0}',
-                  label: 'Total Trips',
-                  iconColor: AppColors.success,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-
-          // Search form
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.cardPadding),
-            decoration: BoxDecoration(
+          // Collapsible search bar
+          if (_showSearchBar)
+            Container(
+              padding: const EdgeInsets.all(12),
               color: AppColors.cardBg,
-              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-              boxShadow: AppColors.cardShadow,
-            ),
-            child: Column(
-              children: [
-                CityAutocompleteField(
-                  controller: _fromController,
-                  labelText: 'From City',
-                  prefixIcon: Icons.location_on_outlined,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 12),
-                CityAutocompleteField(
-                  controller: _toController,
-                  labelText: 'To City',
-                  prefixIcon: Icons.flag_outlined,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _truckType,
-                  decoration: const InputDecoration(
-                    labelText: 'Truck Type (Optional)',
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CityAutocompleteField(
+                          controller: _fromController,
+                          labelText: AppLocalizations.of(context)!.originCity,
+                          prefixIcon: Icons.location_on_outlined,
+                          textInputAction: TextInputAction.next,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: CityAutocompleteField(
+                          controller: _toController,
+                          labelText: AppLocalizations.of(context)!.destinationCity,
+                          prefixIcon: Icons.flag_outlined,
+                          textInputAction: TextInputAction.next,
+                        ),
+                      ),
+                    ],
                   ),
-                  items: _truckTypes
-                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _truckType = v!),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _truckType,
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)!.truckType,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          ),
+                          items: _truckTypes
+                              .map((t) =>
+                                  DropdownMenuItem(value: t, child: Text(t)))
+                              .toList(),
+                          onChanged: (v) => setState(() => _truckType = v!),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 44,
+                        child: GradientButton(
+                          text: AppLocalizations.of(context)!.search,
+                          isLoading: _isSearching,
+                          onPressed: _isSearching ? null : _searchLoads,
+                          width: 100,
+                          height: 44,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+          // Filter chips row
+          SizedBox(
+            height: 44,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              children: [
+                // P0-6: My Truck Match filter
+                if (_myTrucks.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _filterChip(
+                      '🚛 My Truck',
+                      _truckMatchOnly,
+                      () {
+                        setState(() => _truckMatchOnly = !_truckMatchOnly);
+                      },
+                    ),
+                  ),
+                _filterChip(
+                  AppLocalizations.of(context)!.verified,
+                  _verifiedOnly,
+                  () {
+                    setState(() => _verifiedOnly = !_verifiedOnly);
+                    _searchLoads();
+                  },
                 ),
-                const SizedBox(height: 16),
-                GradientButton(
-                  text: 'Search Loads',
-                  isLoading: _isSearching,
-                  onPressed: _isSearching ? null : _searchLoads,
-                ),
+                const SizedBox(width: 8),
+                ..._commonMaterials.where((m) => m != 'Any').map((material) {
+                  final isSelected = _materialFilter == material;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _filterChip(
+                      material,
+                      isSelected,
+                      () {
+                        setState(() =>
+                            _materialFilter = isSelected ? null : material);
+                        _searchLoads();
+                      },
+                    ),
+                  );
+                }),
               ],
             ),
           ),
-          const SizedBox(height: 24),
 
-          // Quick links
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => context.go('/my-trips'),
-                  icon: const Icon(Icons.assignment, size: 18),
-                  label: const Text('My Trips'),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.brandTeal),
-                  ),
+          // Weight + sort + clear row
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                ..._weightRanges.where((r) => r != 'Any').map((range) {
+                  final isSelected =
+                      _getWeightRangeLabel() == range;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(range),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        _applyWeightFilter(selected ? range : 'Any');
+                        _searchLoads();
+                      },
+                      selectedColor: AppColors.brandTeal,
+                      labelStyle: TextStyle(
+                        color:
+                            isSelected ? Colors.white : AppColors.textPrimary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(width: 4),
+                _filterChip(
+                  'Price ↑',
+                  _sortOrder == 'price_high',
+                  () {
+                    setState(() => _sortOrder =
+                        _sortOrder == 'price_high' ? 'none' : 'price_high');
+                    _searchLoads();
+                  },
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => context.go('/my-fleet'),
-                  icon: const Icon(Icons.local_shipping, size: 18),
-                  label: const Text('My Fleet'),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.brandTeal),
-                  ),
+                const SizedBox(width: 8),
+                _filterChip(
+                  'Price ↓',
+                  _sortOrder == 'price_low',
+                  () {
+                    setState(() => _sortOrder =
+                        _sortOrder == 'price_low' ? 'none' : 'price_low');
+                    _searchLoads();
+                  },
                 ),
-              ),
-            ],
+                if (_hasActiveFilters) ...[
+                  const SizedBox(width: 12),
+                  ActionChip(
+                    label: Text(AppLocalizations.of(context)!.clear),
+                    onPressed: () {
+                      _fromController.clear();
+                      _toController.clear();
+                      _truckType = 'Any';
+                      _clearFilters();
+                      _searchLoads();
+                    },
+                    backgroundColor: AppColors.errorLight,
+                    labelStyle:
+                        const TextStyle(color: AppColors.error, fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // P1-8: Pickup date + P1-9: Price range filter row
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                ..._dateFilters.where((d) => d != 'Any').map((label) {
+                  final isSelected = _pickupDateFilter == label;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(label),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() => _pickupDateFilter = selected ? label : null);
+                        _searchLoads();
+                      },
+                      selectedColor: AppColors.brandTeal,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(width: 4),
+                ..._priceRanges.where((p) => p != 'Any').map((range) {
+                  final isSelected = _getPriceRangeLabel() == range;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(range),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        _applyPriceFilter(selected ? range : 'Any');
+                        _searchLoads();
+                      },
+                      selectedColor: AppColors.brandTeal,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+
+          // Result count + loading indicator
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                if (_isSearching)
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.brandTeal,
+                    ),
+                  ),
+                if (_isSearching) const SizedBox(width: 8),
+                Text(
+                  _initialLoadDone
+                      ? '${sorted.length} load${sorted.length == 1 ? '' : 's'} available'
+                      : 'Loading...',
+                  style: AppTypography.caption
+                      .copyWith(color: AppColors.textSecondary),
+                ),
+                const Spacer(),
+                // P2-9: Save search button
+                if (_initialLoadDone &&
+                    (_fromController.text.trim().isNotEmpty ||
+                        _toController.text.trim().isNotEmpty))
+                  GestureDetector(
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      await SmartDefaults.saveSearchPreset(
+                        origin: _fromController.text.trim(),
+                        dest: _toController.text.trim(),
+                        truckType: _truckType,
+                        material: _materialFilter,
+                      );
+                      if (mounted) {
+                        messenger
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(const SnackBar(
+                            content: Text('Search saved!'),
+                            duration: Duration(seconds: 1),
+                          ));
+                      }
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.bookmark_add_outlined,
+                            size: 16, color: AppColors.brandTeal),
+                        const SizedBox(width: 4),
+                        Text('Save',
+                            style: AppTypography.caption
+                                .copyWith(color: AppColors.brandTeal)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Load list
+          Expanded(
+            child: !_initialLoadDone
+                ? const Center(
+                    child: CircularProgressIndicator(
+                        color: AppColors.brandTeal),
+                  )
+                : sorted.isEmpty
+                    ? _buildEmptyState(context)
+                    : RefreshIndicator(
+                        color: AppColors.brandTeal,
+                        onRefresh: _searchLoads,
+                        child: ListView.builder(
+                          controller: _resultsScrollController,
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
+                          ),
+                          padding:
+                              const EdgeInsets.all(AppSpacing.screenPaddingH),
+                          itemCount: sorted.length,
+                          itemBuilder: (context, index) {
+                            final loadId = sorted[index]['id'] as String? ?? '';
+                            return _LoadCard(
+                              load: sorted[index],
+                              timeAgo: _formatTimeAgo(
+                                  sorted[index]['created_at'] as String?),
+                              isMatch: _truckMatchesLoad(sorted[index]),
+                              isBookmarked: _bookmarkedIds.contains(loadId),
+                              onToggleBookmark: () => _toggleBookmark(loadId),
+                            ).staggerEntrance(index);
+                          },
+                        ),
+                      ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildResults() {
-    final sorted = _filteredAndSortedResults;
-    final hasActiveFilters = _verifiedOnly || _materialFilter != null || _minWeight != null || _maxWeight != null;
-
-    return Column(
-      children: [
-        // Header
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.screenPaddingH,
-            vertical: 12,
-          ),
-          color: AppColors.cardBg,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${_fromController.text} → ${_toController.text}',
-                  style: AppTypography.h3Subsection,
-                ),
-              ),
-              if (hasActiveFilters)
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.brandTeal,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Filters On',
-                    style: AppTypography.caption.copyWith(color: Colors.white),
-                  ),
-                ),
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                onPressed: () => setState(() {
-                  _hasSearched = false;
-                  _clearFilters();
-                }),
-              ),
-            ],
-          ),
-        ),
-
-        // Filter chips
-        SizedBox(
-          height: 48,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              // Verified supplier toggle
-              _filterChip(
-                'Verified Only',
-                _verifiedOnly,
-                () => setState(() => _verifiedOnly = !_verifiedOnly),
-              ),
-              const SizedBox(width: 8),
-              // Material filters
-              ..._commonMaterials.where((m) => m != 'Any').map((material) {
-                final isSelected = _materialFilter == material;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _filterChip(
-                    material,
-                    isSelected,
-                    () => setState(() => _materialFilter = isSelected ? null : material),
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
-
-        // Weight range chips
-        SizedBox(
-          height: 40,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              ..._weightRanges.map((range) {
-                final isSelected = _getWeightRangeLabel() == range && range != 'Any';
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(range),
-                    selected: isSelected,
-                    onSelected: (selected) => _applyWeightFilter(selected ? range : 'Any'),
-                    selectedColor: AppColors.brandTeal,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
-                      fontSize: 12,
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
-        const SizedBox(height: 4),
-
-        // Sort chips
-        SizedBox(
-          height: 40,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              _filterChip(
-                'Price ↑',
-                _sortOrder == 'price_high',
-                () => setState(() => _sortOrder =
-                    _sortOrder == 'price_high' ? 'none' : 'price_high'),
-              ),
-              const SizedBox(width: 8),
-              _filterChip(
-                'Price ↓',
-                _sortOrder == 'price_low',
-                () => setState(() => _sortOrder =
-                    _sortOrder == 'price_low' ? 'none' : 'price_low'),
-              ),
-              if (hasActiveFilters) ...[
-                const SizedBox(width: 16),
-                ActionChip(
-                  label: const Text('Clear All'),
-                  onPressed: _clearFilters,
-                  backgroundColor: AppColors.errorLight,
-                  labelStyle: const TextStyle(color: AppColors.error, fontSize: 12),
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Results
-        Expanded(
-          child: sorted.isEmpty
-              ? EmptyState(
-                  icon: Icons.search_off,
-                  title: 'No loads found',
-                  description: hasActiveFilters
-                      ? 'Try adjusting your filters or search criteria'
-                      : 'Try a different route or truck type',
-                  actionLabel: hasActiveFilters ? 'Clear Filters' : 'New Search',
-                  onAction: () => hasActiveFilters
-                      ? _clearFilters()
-                      : setState(() => _hasSearched = false),
-                )
-              : RefreshIndicator(
-                  color: AppColors.brandTeal,
-                  onRefresh: _searchLoads,
-                  child: ListView.builder(
-                    controller: _resultsScrollController,
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
-                    ),
-                    padding: const EdgeInsets.all(AppSpacing.screenPaddingH),
-                    itemCount: sorted.length,
-                    itemBuilder: (context, index) {
-                      return _LoadCard(
-                        load: sorted[index],
-                        timeAgo: _formatTimeAgo(
-                            sorted[index]['created_at'] as String?),
-                      ).staggerEntrance(index);
-                    },
-                  ),
-                ),
-        ),
-      ],
-    );
-  }
-
   String? _getWeightRangeLabel() {
     if (_minWeight == null && _maxWeight == null) return 'Any';
+    if (_minWeight == 0 && _maxWeight == 10) return '0-10T';
     if (_minWeight == 10 && _maxWeight == 20) return '10-20T';
     if (_minWeight == 20 && _maxWeight == 30) return '20-30T';
     if (_minWeight == 30 && _maxWeight == null) return '30T+';
@@ -450,6 +676,10 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
   void _applyWeightFilter(String range) {
     setState(() {
       switch (range) {
+        case '0-10T':
+          _minWeight = 0;
+          _maxWeight = 10;
+          break;
         case '10-20T':
           _minWeight = 10;
           _maxWeight = 20;
@@ -472,11 +702,166 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
   void _clearFilters() {
     setState(() {
       _verifiedOnly = false;
+      _truckMatchOnly = false;
       _materialFilter = null;
       _minWeight = null;
       _maxWeight = null;
+      _pickupDateFilter = null;
+      _minPrice = null;
+      _maxPrice = null;
       _sortOrder = 'none';
     });
+  }
+
+  // P1-8: Convert date filter label to ISO date string for DB query
+  String? _getPickupDateFrom() {
+    if (_pickupDateFilter == null) return null;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    switch (_pickupDateFilter) {
+      case 'Today':
+        return today.toIso8601String().split('T').first;
+      case 'Tomorrow':
+        return today.add(const Duration(days: 1)).toIso8601String().split('T').first;
+      case 'This Week':
+        return today.toIso8601String().split('T').first;
+      default:
+        return null;
+    }
+  }
+
+  // P1-9: Price range helpers
+  String? _getPriceRangeLabel() {
+    if (_minPrice == null && _maxPrice == null) return 'Any';
+    if (_minPrice == 0 && _maxPrice == 1500) return '₹0-1500';
+    if (_minPrice == 1500 && _maxPrice == 2500) return '₹1500-2500';
+    if (_minPrice == 2500 && _maxPrice == 4000) return '₹2500-4000';
+    if (_minPrice == 4000 && _maxPrice == null) return '₹4000+';
+    return null;
+  }
+
+  void _applyPriceFilter(String range) {
+    setState(() {
+      switch (range) {
+        case '₹0-1500':
+          _minPrice = 0;
+          _maxPrice = 1500;
+          break;
+        case '₹1500-2500':
+          _minPrice = 1500;
+          _maxPrice = 2500;
+          break;
+        case '₹2500-4000':
+          _minPrice = 2500;
+          _maxPrice = 4000;
+          break;
+        case '₹4000+':
+          _minPrice = 4000;
+          _maxPrice = null;
+          break;
+        default:
+          _minPrice = null;
+          _maxPrice = null;
+      }
+    });
+  }
+
+  // P2-9: Empty state with saved search presets
+  Widget _buildEmptyState(BuildContext context) {
+    if (_hasActiveFilters) {
+      return EmptyState(
+        icon: Icons.search_off,
+        title: AppLocalizations.of(context)!.noLoadsFound,
+        description: 'Try removing some filters to see more results.',
+        actionLabel: AppLocalizations.of(context)!.clear,
+        onAction: () {
+          _fromController.clear();
+          _toController.clear();
+          _truckType = 'Any';
+          _clearFilters();
+          _searchLoads();
+        },
+      );
+    }
+    return FutureBuilder<List<Map<String, String>>>(
+      future: SmartDefaults.getSavedSearchPresets(),
+      builder: (context, snapshot) {
+        final presets = snapshot.data ?? [];
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const SizedBox(height: 32),
+              Icon(Icons.search_off, size: 48, color: AppColors.textTertiary),
+              const SizedBox(height: 12),
+              Text(
+                AppLocalizations.of(context)!.noLoadsFound,
+                style: AppTypography.h3Subsection,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'No active loads available right now.',
+                style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+              ),
+              if (presets.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Saved Searches',
+                    style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...presets.map((preset) {
+                  final origin = preset['origin'] ?? '';
+                  final dest = preset['dest'] ?? '';
+                  final label = [
+                    if (origin.isNotEmpty) origin,
+                    if (dest.isNotEmpty) dest,
+                  ].join(' → ');
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.bookmark, color: AppColors.brandTeal, size: 20),
+                    title: Text(label, style: AppTypography.bodyMedium),
+                    subtitle: [
+                      if (preset['truck_type'] != null) preset['truck_type']!,
+                      if (preset['material'] != null) preset['material']!,
+                    ].isNotEmpty
+                        ? Text(
+                            [
+                              if (preset['truck_type'] != null) preset['truck_type']!,
+                              if (preset['material'] != null) preset['material']!,
+                            ].join(' • '),
+                            style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                          )
+                        : null,
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close, size: 16),
+                      onPressed: () async {
+                        await SmartDefaults.removeSavedSearch(origin, dest);
+                        setState(() {}); // rebuild
+                      },
+                    ),
+                    onTap: () {
+                      _fromController.text = origin;
+                      _toController.text = dest;
+                      if (preset['truck_type'] != null) {
+                        setState(() => _truckType = preset['truck_type']!);
+                      }
+                      if (preset['material'] != null) {
+                        setState(() => _materialFilter = preset['material']);
+                      }
+                      _searchLoads();
+                    },
+                  );
+                }),
+              ],
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _filterChip(String label, bool selected, VoidCallback onTap) {
@@ -496,14 +881,29 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
 class _LoadCard extends ConsumerWidget {
   final Map<String, dynamic> load;
   final String timeAgo;
+  final bool isMatch;
+  final bool isBookmarked;
+  final VoidCallback? onToggleBookmark;
 
-  const _LoadCard({required this.load, required this.timeAgo});
+  const _LoadCard({
+    required this.load,
+    required this.timeAgo,
+    this.isMatch = false,
+    this.isBookmarked = false,
+    this.onToggleBookmark,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSuperLoad = load['is_super_load'] as bool? ?? false;
 
-    return Container(
+    final loadId = load['id'] as String? ?? '';
+
+    return GestureDetector(
+      onTap: loadId.isNotEmpty
+          ? () => context.push('/load-detail/$loadId')
+          : null,
+      child: Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
@@ -517,43 +917,124 @@ class _LoadCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isSuperLoad)
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.brandOrangeLight,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star, size: 14, color: AppColors.brandOrange),
-                  const SizedBox(width: 4),
-                  Text(
-                    'SUPER LOAD',
-                    style: AppTypography.overline
-                        .copyWith(color: AppColors.brandOrange),
+          Row(
+            children: [
+              if (isSuperLoad)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8, right: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFA726), Color(0xFFFF8F00)],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                ],
-              ),
-            ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.verified, size: 14, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Text(
+                        'SUPER LOAD — PAYMENT GUARANTEED',
+                        style: AppTypography.overline
+                            .copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+              if (isMatch)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.successLight,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle, size: 14, color: AppColors.success),
+                      const SizedBox(width: 4),
+                      Text(
+                        'TRUCK MATCH',
+                        style: AppTypography.overline
+                            .copyWith(color: AppColors.success),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
           Row(
             children: [
               Expanded(
                 child: Text(
                   '${load['origin_city']} → ${load['dest_city']}',
                   style: AppTypography.h3Subsection,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
+              GestureDetector(
+                onTap: onToggleBookmark,
+                child: Icon(
+                  isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                  size: 20,
+                  color: isBookmarked
+                      ? AppColors.brandOrange
+                      : AppColors.textTertiary,
+                ),
+              ),
+              const SizedBox(width: 4),
               TtsButton(
-                text: 'Load from ${load['origin_city']} to ${load['dest_city']}. '
-                    '${load['material']}, ${load['weight_tonnes']} tonnes. '
-                    'Price ${load['price']} rupees per ton.',
+                text: 'Read aloud',
+                spokenText: () {
+                  final isHi = ref.read(localeProvider).languageCode == 'hi';
+                  final truck = load['required_truck_type'] as String? ?? '';
+                  final tyres = (load['required_tyres'] as List?)?.join(' and ') ?? '';
+                  final pickup = load['pickup_date'] as String? ?? '';
+                  final priceType = load['price_type'] as String? ?? 'negotiable';
+                  if (isHi) {
+                    return '${load['origin_city']} से ${load['dest_city']}। '
+                        '${load['material']}, ${load['weight_tonnes']} टन। '
+                        'रेट ${load['price']} रुपये प्रति टन, ${priceType == 'fixed' ? 'पक्का रेट' : 'बातचीत योग्य'}। '
+                        '${truck.isNotEmpty ? 'ट्रक: $truck। ' : ''}'
+                        '${tyres.isNotEmpty ? 'टायर: $tyres पहिया। ' : ''}'
+                        '${pickup.isNotEmpty ? 'उठान: $pickup।' : ''}';
+                  }
+                  return 'Load from ${load['origin_city']} to ${load['dest_city']}. '
+                      '${load['material']}, ${load['weight_tonnes']} tonnes. '
+                      'Price ${load['price']} rupees per tonne, ${priceType == 'fixed' ? 'fixed rate' : 'negotiable'}. '
+                      '${truck.isNotEmpty ? 'Truck: $truck. ' : ''}'
+                      '${tyres.isNotEmpty ? 'Tyres: $tyres wheel. ' : ''}'
+                      '${pickup.isNotEmpty ? 'Pickup: $pickup.' : ''}';
+                }(),
                 size: 18,
+                locale: ref.read(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-IN',
               ),
             ],
           ),
+          // Phase 8: Show route distance if available
+          if (load['route_distance_km'] != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.route, size: 14, color: AppColors.brandTeal),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${(load['route_distance_km'] as num).round()} km'
+                    '${load['route_duration_min'] != null ? ' \u2022 ~${((load['route_duration_min'] as num).toDouble() / 60).toStringAsFixed(1)} hrs' : ''}',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.brandTeal,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -575,6 +1056,65 @@ class _LoadCard extends ConsumerWidget {
                   style: AppTypography.number.copyWith(fontSize: 16)),
             ],
           ),
+          // Phase 3B: Trip cost estimation
+          Builder(builder: (_) {
+            final price = (load['price'] as num?)?.toDouble();
+            final weight = (load['weight_tonnes'] as num?)?.toDouble();
+            if (price != null && weight != null && weight > 0) {
+              final tripCost = (price * weight).round();
+              final formatted = tripCost >= 100000
+                  ? '₹${(tripCost / 100000).toStringAsFixed(1)}L'
+                  : '₹${tripCost.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}';
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.account_balance_wallet_outlined, size: 14, color: AppColors.success),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$formatted total trip value',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+          // LC-1 to LC-4: Truck type, tyres, pickup date, price type
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: [
+              if (load['required_truck_type'] != null &&
+                  (load['required_truck_type'] as String).isNotEmpty)
+                _infoBadge(
+                  Icons.local_shipping_outlined,
+                  (load['required_truck_type'] as String),
+                ),
+              if (load['required_tyres'] != null &&
+                  (load['required_tyres'] as List).isNotEmpty)
+                _infoBadge(
+                  Icons.tire_repair,
+                  '${(load['required_tyres'] as List).join(',')}W',
+                ),
+              if (load['pickup_date'] != null)
+                _infoBadge(
+                  Icons.calendar_today,
+                  _formatPickupDate(load['pickup_date'] as String),
+                ),
+              _infoBadge(
+                load['price_type'] == 'fixed'
+                    ? Icons.lock_outline
+                    : Icons.swap_horiz,
+                (load['price_type'] as String? ?? 'negotiable').toUpperCase(),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -586,7 +1126,7 @@ class _LoadCard extends ConsumerWidget {
               SizedBox(
                 height: 36,
                 child: GradientButton(
-                  text: 'Chat Now',
+                  text: AppLocalizations.of(context)!.chatNow,
                   height: 36,
                   width: 110,
                   onPressed: () async {
@@ -631,7 +1171,49 @@ class _LoadCard extends ConsumerWidget {
           ),
         ],
       ),
+      ),
     );
+  }
+
+  Widget _infoBadge(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.scaffoldBg,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: AppColors.divider, width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: AppColors.textTertiary),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatPickupDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final pickupDay = DateTime(date.year, date.month, date.day);
+      final diff = pickupDay.difference(today).inDays;
+      if (diff == 0) return 'Today';
+      if (diff == 1) return 'Tomorrow';
+      if (diff < 7) return '${diff}d';
+      return '${date.day}/${date.month}';
+    } catch (_) {
+      return dateStr.length > 10 ? dateStr.substring(0, 10) : dateStr;
+    }
   }
 
   void _showVerifySheet(BuildContext context) {
@@ -648,18 +1230,18 @@ class _LoadCard extends ConsumerWidget {
             const Icon(Icons.verified_user_outlined,
                 size: 48, color: AppColors.brandTeal),
             const SizedBox(height: 16),
-            Text('Verify Profile to Chat',
+            Text(AppLocalizations.of(context)!.verification,
                 style: AppTypography.h3Subsection),
             const SizedBox(height: 8),
             Text(
-              'Complete your verification to start chatting with suppliers.',
+              AppLocalizations.of(context)!.completeVerification,
               textAlign: TextAlign.center,
               style: AppTypography.bodyMedium
                   .copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
             GradientButton(
-              text: 'Verify Now',
+              text: AppLocalizations.of(context)!.verification,
               onPressed: () {
                 Navigator.pop(ctx);
                 context.push('/trucker-verification');
