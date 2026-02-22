@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:tranzfort/l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
@@ -62,6 +64,7 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
   String? _pickupDateFilter; // P1-8: pickup date filter
   double? _minPrice; // P1-9: price range filter
   double? _maxPrice;
+  bool _showMapView = false; // Task 6.9: List/Map toggle
 
   static const _truckTypes = ['Any', 'Open', 'Container', 'Trailer', 'Tanker'];
   static final _commonMaterials = LoadConstants.filterMaterials; // P0-5: smart categories
@@ -310,6 +313,15 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
                 : 'Find loads. Search loads from origin to destination. Apply filters to find the right truck.',
             locale: ref.watch(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-IN',
             size: 22,
+          ),
+          // Task 6.9: List/Map toggle
+          IconButton(
+            icon: Icon(
+              _showMapView ? Icons.list : Icons.map_outlined,
+              color: _showMapView ? AppColors.brandTeal : null,
+            ),
+            onPressed: () => setState(() => _showMapView = !_showMapView),
+            tooltip: _showMapView ? 'List View' : 'Map View',
           ),
           // Search toggle
           IconButton(
@@ -628,7 +640,7 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
             ),
           ),
 
-          // Load list
+          // Load list or map view
           Expanded(
             child: !_initialLoadDone
                 ? const Center(
@@ -637,30 +649,40 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
                   )
                 : sorted.isEmpty
                     ? _buildEmptyState(context)
-                    : RefreshIndicator(
-                        color: AppColors.brandTeal,
-                        onRefresh: _searchLoads,
-                        child: ListView.builder(
-                          controller: _resultsScrollController,
-                          physics: const AlwaysScrollableScrollPhysics(
-                            parent: BouncingScrollPhysics(),
+                    : _showMapView
+                        ? _LoadsMapView(
+                            loads: sorted,
+                            onLoadTap: (load) {
+                              final loadId = load['id'] as String? ?? '';
+                              if (loadId.isNotEmpty) {
+                                context.push('/load-detail/$loadId');
+                              }
+                            },
+                          )
+                        : RefreshIndicator(
+                            color: AppColors.brandTeal,
+                            onRefresh: _searchLoads,
+                            child: ListView.builder(
+                              controller: _resultsScrollController,
+                              physics: const AlwaysScrollableScrollPhysics(
+                                parent: BouncingScrollPhysics(),
+                              ),
+                              padding:
+                                  const EdgeInsets.all(AppSpacing.screenPaddingH),
+                              itemCount: sorted.length,
+                              itemBuilder: (context, index) {
+                                final loadId = sorted[index]['id'] as String? ?? '';
+                                return _LoadCard(
+                                  load: sorted[index],
+                                  timeAgo: _formatTimeAgo(
+                                      sorted[index]['created_at'] as String?),
+                                  isMatch: _truckMatchesLoad(sorted[index]),
+                                  isBookmarked: _bookmarkedIds.contains(loadId),
+                                  onToggleBookmark: () => _toggleBookmark(loadId),
+                                ).staggerEntrance(index);
+                              },
+                            ),
                           ),
-                          padding:
-                              const EdgeInsets.all(AppSpacing.screenPaddingH),
-                          itemCount: sorted.length,
-                          itemBuilder: (context, index) {
-                            final loadId = sorted[index]['id'] as String? ?? '';
-                            return _LoadCard(
-                              load: sorted[index],
-                              timeAgo: _formatTimeAgo(
-                                  sorted[index]['created_at'] as String?),
-                              isMatch: _truckMatchesLoad(sorted[index]),
-                              isBookmarked: _bookmarkedIds.contains(loadId),
-                              onToggleBookmark: () => _toggleBookmark(loadId),
-                            ).staggerEntrance(index);
-                          },
-                        ),
-                      ),
           ),
         ],
       ),
@@ -1394,6 +1416,194 @@ class _StatBadge extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Task 6.9: Map view for Find Loads — shows load origins as colored pins.
+class _LoadsMapView extends StatefulWidget {
+  final List<Map<String, dynamic>> loads;
+  final void Function(Map<String, dynamic> load) onLoadTap;
+
+  const _LoadsMapView({required this.loads, required this.onLoadTap});
+
+  @override
+  State<_LoadsMapView> createState() => _LoadsMapViewState();
+}
+
+class _LoadsMapViewState extends State<_LoadsMapView> {
+  Map<String, dynamic>? _selectedLoad;
+
+  static Color _materialColor(String? material) {
+    if (material == null) return AppColors.brandTeal;
+    final m = material.toLowerCase();
+    if (m.contains('steel') || m.contains('iron')) return Colors.blueGrey;
+    if (m.contains('coal') || m.contains('coke')) return Colors.grey.shade800;
+    if (m.contains('cement') || m.contains('clinker')) return Colors.indigo;
+    if (m.contains('grain') || m.contains('wheat') || m.contains('rice')) return Colors.green;
+    if (m.contains('sand') || m.contains('stone')) return Colors.brown;
+    return AppColors.brandTeal;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Filter loads with valid lat/lng
+    final mappable = widget.loads.where((l) {
+      final lat = (l['origin_lat'] as num?)?.toDouble();
+      final lng = (l['origin_lng'] as num?)?.toDouble();
+      return lat != null && lng != null;
+    }).toList();
+
+    if (mappable.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.map_outlined, size: 48, color: AppColors.textTertiary),
+            const SizedBox(height: 8),
+            Text('No loads with location data',
+                style: AppTypography.bodyMedium
+                    .copyWith(color: AppColors.textSecondary)),
+          ],
+        ),
+      );
+    }
+
+    // Compute bounds
+    double minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+    for (final l in mappable) {
+      final lat = (l['origin_lat'] as num).toDouble();
+      final lng = (l['origin_lng'] as num).toDouble();
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+    }
+
+    return Stack(
+      children: [
+        FlutterMap(
+          options: MapOptions(
+            initialCameraFit: CameraFit.bounds(
+              bounds: LatLngBounds(
+                LatLng(minLat, minLng),
+                LatLng(maxLat, maxLng),
+              ),
+              padding: const EdgeInsets.all(40),
+            ),
+            onTap: (tapPos, latLng) => setState(() => _selectedLoad = null),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.tranzfort.app',
+            ),
+            MarkerLayer(
+              markers: mappable.map((load) {
+                final lat = (load['origin_lat'] as num).toDouble();
+                final lng = (load['origin_lng'] as num).toDouble();
+                final color = _materialColor(load['material'] as String?);
+                final isSuper = load['is_super_load'] == true;
+
+                return Marker(
+                  point: LatLng(lat, lng),
+                  width: isSuper ? 32 : 24,
+                  height: isSuper ? 32 : 24,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedLoad = load),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSuper ? Colors.amber : Colors.white,
+                          width: isSuper ? 2.5 : 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.25),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Icon(
+                          isSuper ? Icons.star : Icons.local_shipping,
+                          size: isSuper ? 14 : 10,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+
+        // Popup card for selected load
+        if (_selectedLoad != null)
+          Positioned(
+            bottom: 12,
+            left: 12,
+            right: 12,
+            child: Material(
+              elevation: 6,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: _selectedLoad!['is_super_load'] == true
+                      ? Border.all(color: Colors.amber, width: 2)
+                      : null,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${_selectedLoad!['origin_city']} → ${_selectedLoad!['dest_city']}',
+                            style: AppTypography.bodyMedium
+                                .copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => setState(() => _selectedLoad = null),
+                          child: const Icon(Icons.close, size: 18),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_selectedLoad!['material'] ?? 'General'} • '
+                      '${_selectedLoad!['weight_tonnes'] ?? '?'}T • '
+                      '₹${_selectedLoad!['price'] ?? '?'}/ton',
+                      style: AppTypography.caption
+                          .copyWith(color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 34,
+                      child: FilledButton(
+                        onPressed: () => widget.onLoadTap(_selectedLoad!),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.success,
+                        ),
+                        child: const Text('View Details'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
