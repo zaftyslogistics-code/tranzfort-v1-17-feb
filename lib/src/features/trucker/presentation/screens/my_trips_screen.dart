@@ -18,6 +18,7 @@ import '../../../../shared/widgets/error_retry.dart';
 import '../../../../shared/widgets/skeleton_loader.dart';
 import '../../../../shared/widgets/status_chip.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/widgets/feedback_prompt.dart';
 import '../../../../shared/widgets/tts_button.dart';
 
 final _myTripsProvider =
@@ -375,6 +376,7 @@ class _TripCardState extends ConsumerState<_TripCard> {
       }
 
       if (mounted) {
+        final isDeliveryComplete = _currentStage != 'loading';
         AppDialogs.showSnackBar(
           context,
           _currentStage == 'loading'
@@ -383,6 +385,15 @@ class _TripCardState extends ConsumerState<_TripCard> {
                   ? 'Delivery Photo (POD) uploaded. Awaiting admin approval.'
                   : 'Delivery Photo (POD) uploaded. Trip completed!',
         );
+        // Task 5.9: Feedback prompt after trip completion
+        if (isDeliveryComplete && mounted) {
+          final locale = ref.read(localeProvider).languageCode;
+          FeedbackPrompt.maybeShow(
+            context,
+            actionLabel: locale == 'hi' ? 'ट्रिप पूरी हुई' : 'Trip Completed',
+            locale: locale,
+          );
+        }
       }
       widget.onStageUpdated();
     } catch (e) {

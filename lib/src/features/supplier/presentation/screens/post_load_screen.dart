@@ -15,6 +15,7 @@ import '../../../../core/constants/load_constants.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/tts_button.dart';
 import 'package:latlong2/latlong.dart';
+import '../../../../shared/widgets/feedback_prompt.dart';
 import '../../../navigation/services/routing_service.dart';
 
 class PostLoadScreen extends ConsumerStatefulWidget {
@@ -431,6 +432,16 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
             ],
           ),
         );
+
+        // Task 5.9: Feedback prompt after posting a load
+        if (mounted) {
+          final locale = ref.read(localeProvider).languageCode;
+          FeedbackPrompt.maybeShow(
+            context,
+            actionLabel: locale == 'hi' ? 'लोड पोस्ट किया' : 'Load Posted',
+            locale: locale,
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
