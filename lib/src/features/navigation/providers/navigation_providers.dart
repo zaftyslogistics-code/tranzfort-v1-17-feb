@@ -5,6 +5,7 @@ import '../services/saved_places_service.dart';
 import '../services/tracking_service.dart';
 import '../services/location_suggestions_service.dart';
 import '../services/nearby_pois_service.dart';
+import '../services/toll_matching_service.dart';
 import '../services/trip_costing_service.dart';
 
 final routingServiceProvider = Provider<RoutingService>((ref) {
@@ -34,4 +35,8 @@ final nearbyPoisServiceProvider = Provider<NearbyPoisService>((ref) {
 
 final tripCostingServiceProvider = Provider<TripCostingService>((ref) {
   return TripCostingService();
+});
+
+final tollMatchingServiceProvider = Provider<TollMatchingService>((ref) {
+  return TollMatchingService();
 });

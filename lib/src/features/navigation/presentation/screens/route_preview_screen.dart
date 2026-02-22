@@ -11,6 +11,7 @@ import '../../../../core/constants/app_typography.dart';
 import '../../models/route_model.dart';
 import '../../providers/navigation_providers.dart';
 import '../../services/routing_service.dart';
+import '../../services/toll_matching_service.dart';
 import '../../services/trip_costing_service.dart';
 import '../../../../core/utils/map_launcher.dart';
 
@@ -53,6 +54,7 @@ class _RoutePreviewScreenState extends ConsumerState<RoutePreviewScreen> {
   bool _isLoading = true;
   String? _error;
   TripCostEstimate? _costEstimate;
+  TollMatchResult? _tollMatchResult;
 
   // GPS-13.2: Night mode auto-detect
   bool get _isNightMode {
@@ -95,8 +97,9 @@ class _RoutePreviewScreenState extends ConsumerState<RoutePreviewScreen> {
       // Fit map to route bounds
       _fitMapToRoute();
 
-      // Calculate trip cost in background
+      // Calculate trip cost + toll matching in background
       _fetchCosting(routes.first.distanceKm);
+      _fetchTollMatch(routes.first);
     } on RoutingException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -157,6 +160,19 @@ class _RoutePreviewScreenState extends ConsumerState<RoutePreviewScreen> {
       if (mounted) setState(() => _costEstimate = estimate);
     } catch (_) {
       // Non-critical — costing is informational
+    }
+  }
+
+  Future<void> _fetchTollMatch(RouteModel route) async {
+    try {
+      final tollService = ref.read(tollMatchingServiceProvider);
+      final result = await tollService.matchTollsAlongRoute(
+        polyline: route.polyline,
+        axleCount: 3, // default for heavy trucks
+      );
+      if (mounted) setState(() => _tollMatchResult = result);
+    } catch (_) {
+      // Non-critical
     }
   }
 
@@ -312,7 +328,7 @@ class _RoutePreviewScreenState extends ConsumerState<RoutePreviewScreen> {
                   ),
                 ],
               ),
-              // Markers
+              // Markers: origin + dest
               MarkerLayer(
                 markers: [
                   Marker(
@@ -331,6 +347,30 @@ class _RoutePreviewScreenState extends ConsumerState<RoutePreviewScreen> {
                   ),
                 ],
               ),
+              // Task 6.7: Toll plaza markers
+              if (_tollMatchResult != null && _tollMatchResult!.matchedPlazas.isNotEmpty)
+                MarkerLayer(
+                  markers: _tollMatchResult!.matchedPlazas.map((m) {
+                    return Marker(
+                      point: LatLng(m.plaza.lat, m.plaza.lng),
+                      width: 28,
+                      height: 28,
+                      child: Tooltip(
+                        message: '${m.plaza.name} (${m.plaza.highway}) — ₹${m.costForAxle.round()}',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade700,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.toll, size: 14, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
             ],
           ),
         ),
@@ -421,6 +461,47 @@ class _RoutePreviewScreenState extends ConsumerState<RoutePreviewScreen> {
                               fontSize: 11,
                             ),
                           ),
+                        ),
+                      ],
+                      // Task 6.7: Toll plaza details
+                      if (_tollMatchResult != null && _tollMatchResult!.matchedPlazas.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        ExpansionTile(
+                          tilePadding: EdgeInsets.zero,
+                          childrenPadding: const EdgeInsets.only(bottom: 8),
+                          title: Row(
+                            children: [
+                              Icon(Icons.toll, size: 16, color: Colors.orange.shade700),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${_tollMatchResult!.plazaCount} Toll Plaza${_tollMatchResult!.plazaCount != 1 ? 's' : ''} — ${_tollMatchResult!.totalCostText}',
+                                style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                          children: _tollMatchResult!.matchedPlazas.map((m) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: Row(
+                                children: [
+                                  const SizedBox(width: 22),
+                                  Expanded(
+                                    child: Text(
+                                      '${m.plaza.name} (${m.plaza.highway})',
+                                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                                    ),
+                                  ),
+                                  Text(
+                                    '₹${m.costForAxle.round()}',
+                                    style: AppTypography.caption.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ],
                       if (route.viaRoads != null) ...[
