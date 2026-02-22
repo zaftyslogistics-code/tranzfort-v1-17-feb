@@ -378,10 +378,10 @@ class _TripCardState extends ConsumerState<_TripCard> {
         AppDialogs.showSnackBar(
           context,
           _currentStage == 'loading'
-              ? 'LR uploaded. Trip marked In Transit.'
+              ? 'Lorry Receipt uploaded. Trip marked In Transit.'
               : _isSuperLoad
-                  ? 'POD uploaded. Awaiting admin approval.'
-                  : 'POD uploaded. Trip completed!',
+                  ? 'Delivery Photo (POD) uploaded. Awaiting admin approval.'
+                  : 'Delivery Photo (POD) uploaded. Trip completed!',
         );
       }
       widget.onStageUpdated();

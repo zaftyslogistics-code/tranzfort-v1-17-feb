@@ -849,7 +849,7 @@ class BasicBotService {
               : 'To upload your LR (Lorry Receipt), open your active trip.',
           actions: [
             BotAction(
-              label: language == 'hi' ? 'LR अपलोड करें' : 'Upload LR',
+              label: language == 'hi' ? 'लॉरी रसीद अपलोड करें' : 'Upload Lorry Receipt (LR)',
               value: 'navigate',
               payload: {'route': '/my-trips'},
             ),
@@ -862,7 +862,7 @@ class BasicBotService {
               : 'To upload your POD (Proof of Delivery), open your active trip.',
           actions: [
             BotAction(
-              label: language == 'hi' ? 'POD अपलोड करें' : 'Upload POD',
+              label: language == 'hi' ? 'डिलीवरी फोटो अपलोड करें' : 'Upload Delivery Photo (POD)',
               value: 'navigate',
               payload: {'route': '/my-trips'},
             ),
