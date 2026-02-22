@@ -50,10 +50,10 @@ class BottomNavBar extends StatelessWidget {
   ];
 
   static List<_NavItem> _getTruckerItems(AppLocalizations l10n) => [
-    _NavItem(l10n.dashboard, Icons.home_outlined, Icons.home, '/trucker-dashboard'),
-    _NavItem(l10n.findLoads, Icons.search_outlined, Icons.search, '/find-loads'),
+    _NavItem(l10n.findLoads, Icons.home_outlined, Icons.home, '/find-loads'),
     _NavItem(l10n.myTrips, Icons.assignment_outlined, Icons.assignment, '/my-trips'),
     _NavItem(l10n.messages, Icons.chat_bubble_outline, Icons.chat_bubble, '/messages'),
+    _NavItem(l10n.dashboard, Icons.bar_chart_outlined, Icons.bar_chart, '/trucker-dashboard'),
   ];
 }
 

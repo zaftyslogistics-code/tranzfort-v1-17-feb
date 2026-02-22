@@ -331,6 +331,9 @@ class _FindLoadsScreenState extends ConsumerState<FindLoadsScreen> {
       floatingActionButton: ScrollToTopFab(scrollController: _resultsScrollController),
       body: Column(
         children: [
+          // Task 5.1: Stats ribbon (trucker home)
+          _StatsRibbon(),
+
           // Collapsible search bar
           if (_showSearchBar)
             Container(
@@ -1312,6 +1315,84 @@ class _LoadCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Task 5.1: Compact stats ribbon at top of Find Loads (trucker home).
+class _StatsRibbon extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tripsAsync = ref.watch(truckerActiveTripsCountProvider);
+    final trucksAsync = ref.watch(truckerFleetCountProvider);
+    final unreadAsync = ref.watch(unreadChatsCountProvider);
+
+    final trips = tripsAsync.valueOrNull ?? 0;
+    final trucks = trucksAsync.valueOrNull ?? 0;
+    final unread = unreadAsync.valueOrNull ?? 0;
+
+    return Container(
+      height: 36,
+      color: AppColors.brandTealLight,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _StatBadge(
+            icon: Icons.assignment,
+            label: '$trips trips',
+            onTap: () => context.go('/my-trips'),
+          ),
+          _StatBadge(
+            icon: Icons.local_shipping,
+            label: '$trucks trucks',
+            onTap: () => context.push('/my-trucks'),
+          ),
+          _StatBadge(
+            icon: Icons.chat_bubble,
+            label: '$unread messages',
+            highlight: unread > 0,
+            onTap: () => context.go('/messages'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatBadge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool highlight;
+
+  const _StatBadge({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.highlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14,
+              color: highlight ? AppColors.brandOrange : AppColors.brandTeal),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: highlight ? AppColors.brandOrange : AppColors.brandTeal,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
