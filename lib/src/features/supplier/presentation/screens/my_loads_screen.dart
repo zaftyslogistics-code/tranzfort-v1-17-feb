@@ -76,7 +76,7 @@ class MyLoadsScreen extends ConsumerWidget {
           data: (loads) {
             final active = loads
                 .where((l) =>
-                    ['active', 'pending_approval', 'booked', 'in_transit'].contains(l['status']))
+                    ['active', 'pending_approval', 'booked', 'in_transit', 'delivered'].contains(l['status']))
                 .toList();
             final history = loads
                 .where((l) => ['completed', 'cancelled', 'expired']

@@ -307,7 +307,7 @@ class DatabaseService {
         .from('loads')
         .select()
         .eq('assigned_trucker_id', truckerId)
-        .inFilter('status', ['booked', 'in_transit', 'completed'])
+        .inFilter('status', ['booked', 'in_transit', 'delivered', 'completed'])
         .order('updated_at', ascending: false);
     return List<Map<String, dynamic>>.from(response);
   }
