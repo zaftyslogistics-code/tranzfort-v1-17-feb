@@ -287,6 +287,40 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
       if (widget.editLoadId != null) {
         await db.updateLoad(widget.editLoadId!, loadData);
       } else {
+        // Task 5.11: Deduplication check — warn if similar active load exists
+        final origin = _originCityController.text.trim().toLowerCase();
+        final dest = _destCityController.text.trim().toLowerCase();
+        final existingLoads = await db.getMyLoads(userId);
+        final cutoff = DateTime.now().subtract(const Duration(hours: 24));
+        final duplicate = existingLoads.any((l) {
+          if (l['status'] != 'active') return false;
+          final createdAt = l['created_at'] != null
+              ? DateTime.tryParse(l['created_at'] as String)
+              : null;
+          if (createdAt != null && createdAt.isBefore(cutoff)) return false;
+          final lOrigin = (l['origin_city'] as String?)?.toLowerCase() ?? '';
+          final lDest = (l['dest_city'] as String?)?.toLowerCase() ?? '';
+          final lMaterial = (l['material'] as String?)?.toLowerCase() ?? '';
+          return lOrigin == origin &&
+              lDest == dest &&
+              lMaterial == _material.toLowerCase();
+        });
+
+        if (duplicate && mounted) {
+          final isHi = ref.read(localeProvider).languageCode == 'hi';
+          final proceed = await AppDialogs.confirm(
+            context,
+            title: isHi ? 'डुप्लिकेट लोड' : 'Duplicate Load',
+            description: isHi
+                ? 'आपने पिछले 24 घंटे में इसी रूट और सामान का लोड पोस्ट किया है। फिर भी पोस्ट करें?'
+                : 'You already have a similar active load (same route & material) posted in the last 24 hours. Post anyway?',
+          );
+          if (proceed != true) {
+            setState(() => _isLoading = false);
+            return;
+          }
+        }
+
         loadData['supplier_id'] = userId;
         await db.createLoad(loadData);
       }
