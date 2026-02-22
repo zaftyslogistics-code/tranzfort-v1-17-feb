@@ -198,7 +198,11 @@ class _LoadCard extends ConsumerWidget {
                   style: AppTypography.h3Subsection,
                 ),
               ),
-              StatusChip(status: status),
+              StatusChip(
+                status: status,
+                role: 'supplier',
+                locale: ref.watch(localeProvider).languageCode,
+              ),
             ],
           ),
           const SizedBox(height: 8),

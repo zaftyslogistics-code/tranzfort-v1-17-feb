@@ -548,7 +548,11 @@ class _TripCardState extends ConsumerState<_TripCard> {
                   style: AppTypography.h3Subsection,
                 ),
               ),
-              StatusChip(status: status),
+              StatusChip(
+                status: status,
+                role: 'trucker',
+                locale: ref.watch(localeProvider).languageCode,
+              ),
             ],
           ),
           const SizedBox(height: 8),

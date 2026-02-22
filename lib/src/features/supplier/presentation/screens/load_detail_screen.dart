@@ -99,7 +99,11 @@ class LoadDetailScreen extends ConsumerWidget {
                               style: AppTypography.h2Section,
                             ),
                           ),
-                          StatusChip(status: status),
+                          StatusChip(
+                            status: status,
+                            role: 'supplier',
+                            locale: ref.watch(localeProvider).languageCode,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
