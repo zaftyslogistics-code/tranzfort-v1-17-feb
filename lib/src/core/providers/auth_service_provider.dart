@@ -9,6 +9,7 @@ import '../services/tts_service.dart';
 import '../services/permission_service.dart';
 import '../services/notification_service.dart';
 import '../services/google_places_service.dart';
+import '../repositories/load_repository.dart';
 
 // ─── SERVICE PROVIDERS ───
 
@@ -18,6 +19,10 @@ final authServiceProvider = Provider<AuthService>((ref) {
 
 final databaseServiceProvider = Provider<DatabaseService>((ref) {
   return DatabaseService(Supabase.instance.client);
+});
+
+final loadRepositoryProvider = Provider<LoadRepository>((ref) {
+  return LoadRepository(Supabase.instance.client);
 });
 
 final storageServiceProvider = Provider<StorageService>((ref) {
