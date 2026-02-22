@@ -1038,6 +1038,9 @@ class _LoadCard extends ConsumerWidget {
           const SizedBox(height: 8),
           Row(
             children: [
+              Icon(_materialIcon(load['material'] as String? ?? ''),
+                  size: 16, color: AppColors.brandTeal),
+              const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
@@ -1052,8 +1055,22 @@ class _LoadCard extends ConsumerWidget {
               Text('${load['weight_tonnes']} tonnes',
                   style: AppTypography.bodySmall),
               const Spacer(),
-              Text('₹${load['price']}/ton',
-                  style: AppTypography.number.copyWith(fontSize: 16)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('₹${load['price']}/ton',
+                      style: AppTypography.number.copyWith(fontSize: 16)),
+                  if (load['advance_percentage'] != null)
+                    Text(
+                      '${load['advance_percentage']}% advance',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10,
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
           // Phase 3B: Trip cost estimation
@@ -1116,19 +1133,42 @@ class _LoadCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 8),
+          if (timeAgo.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text('Posted $timeAgo',
+                  style: AppTypography.caption
+                      .copyWith(color: AppColors.textTertiary)),
+            ),
+          // Task 5.4: Book as primary CTA, Chat as secondary
           Row(
             children: [
-              if (timeAgo.isNotEmpty)
-                Text('Posted $timeAgo',
-                    style: AppTypography.caption
-                        .copyWith(color: AppColors.textTertiary)),
-              const Spacer(),
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      final loadId = load['id'] as String? ?? '';
+                      if (loadId.isNotEmpty) {
+                        context.push('/load-detail/$loadId');
+                      }
+                    },
+                    icon: const Icon(Icons.local_shipping, size: 16),
+                    label: const Text('Book Load'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      textStyle: AppTypography.bodySmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               SizedBox(
-                height: 36,
-                child: GradientButton(
-                  text: AppLocalizations.of(context)!.chatNow,
-                  height: 36,
-                  width: 110,
+                height: 38,
+                child: OutlinedButton.icon(
                   onPressed: () async {
                     HapticFeedback.lightImpact();
 
@@ -1165,6 +1205,12 @@ class _LoadCard extends ConsumerWidget {
                       }
                     }
                   },
+                  icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                  label: const Text('Chat'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.brandTeal,
+                    side: const BorderSide(color: AppColors.brandTeal),
+                  ),
                 ),
               ),
             ],
@@ -1198,6 +1244,23 @@ class _LoadCard extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Task 5.4: Material-specific icon for visual recognition.
+  static IconData _materialIcon(String material) {
+    final m = material.toLowerCase();
+    if (m.contains('steel') || m.contains('iron') || m.contains('metal')) return Icons.construction;
+    if (m.contains('coal') || m.contains('coke')) return Icons.terrain;
+    if (m.contains('cement') || m.contains('clinker')) return Icons.domain;
+    if (m.contains('grain') || m.contains('wheat') || m.contains('rice') || m.contains('dal')) return Icons.grass;
+    if (m.contains('sand') || m.contains('gravel') || m.contains('stone') || m.contains('aggregate')) return Icons.landscape;
+    if (m.contains('timber') || m.contains('wood') || m.contains('plywood')) return Icons.park;
+    if (m.contains('chemical') || m.contains('acid') || m.contains('fertilizer')) return Icons.science;
+    if (m.contains('oil') || m.contains('fuel') || m.contains('diesel') || m.contains('petrol')) return Icons.local_gas_station;
+    if (m.contains('cotton') || m.contains('textile') || m.contains('fabric')) return Icons.checkroom;
+    if (m.contains('machinery') || m.contains('equipment') || m.contains('machine')) return Icons.precision_manufacturing;
+    if (m.contains('container') || m.contains('parcel') || m.contains('goods')) return Icons.inventory_2;
+    return Icons.category;
   }
 
   String _formatPickupDate(String dateStr) {
