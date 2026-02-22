@@ -525,7 +525,6 @@ class _TripCardState extends ConsumerState<_TripCard> {
   Widget build(BuildContext context) {
     final trip = widget.trip;
     final status = trip['status'] as String? ?? 'booked';
-    final isDelivered = _currentStage == 'delivered';
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
@@ -566,79 +565,250 @@ class _TripCardState extends ConsumerState<_TripCard> {
           // Trip stage progress
           _buildStageProgress(l10n),
 
-          // Advance button
-          if (!isDelivered && status != 'completed') ...[
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _isUpdating ? null : () => _advanceStage(l10n),
-                    icon: _isUpdating
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.brandTeal,
-                            ),
-                          )
-                        : Icon(_stageIcons[_nextStage] ?? Icons.arrow_forward,
-                            size: 18),
-                    label: Text(
-                      _nextStage != null
-                          ? 'Mark: ${_getStageLabels(l10n)[_nextStage]}'
-                          : 'Up to date',
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.brandTeal,
-                      side: const BorderSide(color: AppColors.brandTeal),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    final origin = trip['origin_city'] as String? ?? '';
-                    final dest = trip['dest_city'] as String? ?? '';
-                    final material = trip['material'] as String? ?? '';
-                    final weight = trip['weight_tonnes']?.toString() ?? '';
-                    context.push('/navigation', extra: {
-                      'origin': origin,
-                      'destination': dest,
-                      'tripId': trip['id'] as String?,
-                      'loadContext': '$origin → $dest | $material | ${weight}T',
-                    });
-                  },
-                  icon: const Icon(Icons.navigation, size: 18),
-                  label: const Text('Navigate'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.brandOrange,
-                    side: const BorderSide(color: AppColors.brandOrange),
-                  ),
-                ),
-              ],
-            ),
-          ],
-
-          // Rate button for completed trips
-          if (isDelivered || status == 'completed') ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _showRatingDialog(trip),
-                icon: const Icon(Icons.star_outline, size: 18),
-                label: const Text('Rate Supplier'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.brandOrange,
-                  side: const BorderSide(color: AppColors.brandOrange),
-                ),
-              ),
-            ),
-          ],
+          // Task 5.5: Single primary CTA per status
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _buildPrimaryCta(context, trip, status, l10n)),
+              const SizedBox(width: 8),
+              _buildOverflowMenu(context, trip, status, l10n),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  /// Task 5.5: Single primary CTA based on trip status + stage.
+  Widget _buildPrimaryCta(
+    BuildContext context,
+    Map<String, dynamic> trip,
+    String status,
+    AppLocalizations l10n,
+  ) {
+    final isDelivered = _currentStage == 'delivered';
+    final atDestination = _currentStage == 'reached_destination' ||
+        _currentStage == 'unloading';
+
+    // completed → Rate Supplier
+    if (status == 'completed' || isDelivered) {
+      if (status == 'completed') {
+        return FilledButton.icon(
+          onPressed: () => _showRatingDialog(trip),
+          icon: const Icon(Icons.star, size: 18),
+          label: const Text('Rate Supplier'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.brandOrange,
+            minimumSize: const Size.fromHeight(44),
+          ),
+        );
+      }
+      // delivered → waiting for supplier confirmation
+      return FilledButton.icon(
+        onPressed: null,
+        icon: const Icon(Icons.hourglass_top, size: 18),
+        label: const Text('Waiting for supplier'),
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.textTertiary,
+          disabledBackgroundColor: AppColors.textTertiary.withValues(alpha: 0.15),
+          disabledForegroundColor: AppColors.textSecondary,
+          minimumSize: const Size.fromHeight(44),
+        ),
+      );
+    }
+
+    // booked, not_started → Start Trip
+    if (status == 'booked' && _currentStage == 'not_started') {
+      return FilledButton.icon(
+        onPressed: _isUpdating ? null : () => _advanceStage(l10n),
+        icon: _isUpdating
+            ? const SizedBox(width: 18, height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.local_shipping, size: 18),
+        label: const Text('Start Trip'),
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.success,
+          minimumSize: const Size.fromHeight(44),
+        ),
+      );
+    }
+
+    // in_transit, at destination → Take Delivery Photo
+    if (atDestination) {
+      return FilledButton.icon(
+        onPressed: _isUpdating ? null : () => _advanceStage(l10n),
+        icon: _isUpdating
+            ? const SizedBox(width: 18, height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.camera_alt, size: 18),
+        label: const Text('Take Delivery Photo (POD)'),
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.brandOrange,
+          minimumSize: const Size.fromHeight(44),
+        ),
+      );
+    }
+
+    // in_transit (moving) → Navigate
+    if (status == 'in_transit' || _currentStage == 'in_transit') {
+      return FilledButton.icon(
+        onPressed: () {
+          final origin = trip['origin_city'] as String? ?? '';
+          final dest = trip['dest_city'] as String? ?? '';
+          final material = trip['material'] as String? ?? '';
+          final weight = trip['weight_tonnes']?.toString() ?? '';
+          context.push('/navigation', extra: {
+            'origin': origin,
+            'destination': dest,
+            'tripId': trip['id'] as String?,
+            'loadContext': '$origin → $dest | $material | ${weight}T',
+          });
+        },
+        icon: const Icon(Icons.navigation, size: 18),
+        label: const Text('Navigate'),
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.info,
+          minimumSize: const Size.fromHeight(44),
+        ),
+      );
+    }
+
+    // Default: advance stage
+    return FilledButton.icon(
+      onPressed: _isUpdating ? null : () => _advanceStage(l10n),
+      icon: _isUpdating
+          ? const SizedBox(width: 18, height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+          : Icon(_stageIcons[_nextStage] ?? Icons.arrow_forward, size: 18),
+      label: Text(
+        _nextStage != null
+            ? 'Mark: ${_getStageLabels(l10n)[_nextStage]}'
+            : 'Up to date',
+      ),
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.brandTeal,
+        minimumSize: const Size.fromHeight(44),
+      ),
+    );
+  }
+
+  /// Task 5.5: Overflow menu with secondary actions.
+  Widget _buildOverflowMenu(
+    BuildContext context,
+    Map<String, dynamic> trip,
+    String status,
+    AppLocalizations l10n,
+  ) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+      onSelected: (value) {
+        switch (value) {
+          case 'navigate':
+            final origin = trip['origin_city'] as String? ?? '';
+            final dest = trip['dest_city'] as String? ?? '';
+            final material = trip['material'] as String? ?? '';
+            final weight = trip['weight_tonnes']?.toString() ?? '';
+            context.push('/navigation', extra: {
+              'origin': origin,
+              'destination': dest,
+              'tripId': trip['id'] as String?,
+              'loadContext': '$origin → $dest | $material | ${weight}T',
+            });
+          case 'advance':
+            _advanceStage(l10n);
+          case 'rate':
+            _showRatingDialog(trip);
+          case 'details':
+            final loadId = trip['id'] as String?;
+            if (loadId != null) context.push('/load-detail/$loadId');
+          case 'contact':
+            final supplierId = trip['supplier_id'] as String?;
+            if (supplierId != null) {
+              final userId = ref.read(authServiceProvider).currentUser?.id;
+              if (userId != null) {
+                ref.read(databaseServiceProvider).getOrCreateConversation(
+                  loadId: trip['id'],
+                  supplierId: supplierId,
+                  truckerId: userId,
+                ).then((conv) {
+                  if (context.mounted) context.push('/chat/${conv['id']}');
+                });
+              }
+            }
+        }
+      },
+      itemBuilder: (ctx) {
+        final items = <PopupMenuEntry<String>>[];
+        final isDelivered = _currentStage == 'delivered';
+
+        // Navigate (if not the primary CTA)
+        if (status != 'in_transit' || _currentStage != 'in_transit') {
+          items.add(const PopupMenuItem(
+            value: 'navigate',
+            child: ListTile(
+              leading: Icon(Icons.navigation, size: 20),
+              title: Text('Navigate'),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ));
+        }
+
+        // Advance stage (if not the primary CTA and not terminal)
+        if (!isDelivered &&
+            status != 'completed' &&
+            _nextStage != null &&
+            !(status == 'booked' && _currentStage == 'not_started')) {
+          items.add(PopupMenuItem(
+            value: 'advance',
+            child: ListTile(
+              leading: const Icon(Icons.skip_next, size: 20),
+              title: Text('Mark: ${_getStageLabels(l10n)[_nextStage]}'),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ));
+        }
+
+        // View Details
+        items.add(const PopupMenuItem(
+          value: 'details',
+          child: ListTile(
+            leading: Icon(Icons.info_outline, size: 20),
+            title: Text('View Details'),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ));
+
+        // Contact Supplier
+        items.add(const PopupMenuItem(
+          value: 'contact',
+          child: ListTile(
+            leading: Icon(Icons.chat_bubble_outline, size: 20),
+            title: Text('Contact Supplier'),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ));
+
+        // Rate (if completed and not primary)
+        if (status == 'completed' || isDelivered) {
+          if (status != 'completed') {
+            items.add(const PopupMenuItem(
+              value: 'rate',
+              child: ListTile(
+                leading: Icon(Icons.star_outline, size: 20),
+                title: Text('Rate Supplier'),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ));
+          }
+        }
+
+        return items;
+      },
     );
   }
 
