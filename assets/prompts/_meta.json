@@ -1,0 +1,8 @@
+{
+  "version": "1.1.0",
+  "description": "TranZfort bot prompt templates — all categories",
+  "locales": ["en", "hi"],
+  "categories": ["system", "roles", "tasks", "clarify", "errors", "voice", "offline", "admin"],
+  "total_keys": 185,
+  "updated_at": "2026-02-23"
+}

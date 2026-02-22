@@ -98,3 +98,17 @@ flutter:
     - assets/lexicon.json
     - assets/us_gold.json
     - assets/us_silver.json
+    - assets/prompts/
+    - assets/prompts/system/
+    - assets/prompts/roles/
+    - assets/prompts/tasks/post_load/
+    - assets/prompts/tasks/find_loads/
+    - assets/prompts/tasks/book_load/
+    - assets/prompts/tasks/super_load/
+    - assets/prompts/tasks/navigate/
+    - assets/prompts/tasks/check_status/
+    - assets/prompts/clarify/
+    - assets/prompts/errors/
+    - assets/prompts/voice/
+    - assets/prompts/offline/
+    - assets/prompts/admin/

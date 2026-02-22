@@ -1,0 +1,12 @@
+{
+  "verification_approved": "Aapka account verify ho gaya! Ab aap {action_text} kar sakte hain.",
+  "verification_rejected": "Aapki verification approve nahi hui. Reason: {reason}. Kripya documents dobara upload karein.",
+  "booking_received": "Nayi booking request! {trucker_name} aapka load book karna chahta hai: {origin} → {destination}.",
+  "booking_approved": "Aapki booking approve ho gayi! Load: {origin} → {destination}. Trip shuru kar sakte hain.",
+  "booking_rejected": "Supplier ne aapki booking approve nahi ki. Load: {origin} → {destination}. Aur loads book kar sakte hain.",
+  "load_expired": "Aapka load expire ho gaya: {origin} → {destination}. Naya load post karein truckers dhundhne ke liye.",
+  "trip_completed": "Trip complete! {origin} → {destination}. Apna experience rate karein.",
+  "super_load_assigned": "Aapke Super Load ke liye trucker assign ho gaya: {origin} → {destination}. Trucker: {trucker_name}.",
+  "super_load_update": "Super Load update: {origin} → {destination}. Status: {status_label}.",
+  "payment_reminder": "Payment reminder: Super Load {origin} → {destination}. Remaining payment {days_remaining} din mein due hai."
+}

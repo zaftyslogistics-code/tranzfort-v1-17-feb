@@ -1,0 +1,7 @@
+{
+  "greeting": "नमस्ते! मैं Nancy हूँ, आपकी TranZfort हेल्पर।",
+  "greeting_with_context": "नमस्ते! मैं Nancy हूँ, आपकी TranZfort हेल्पर।\nआपके {context}।\n{cta}",
+  "cta_supplier": "लोड पोस्ट करना है या अपने लोड देखने हैं?",
+  "cta_trucker": "लोड ढूँढना है या अपनी ट्रिप देखनी है?",
+  "cta_default": "लोड पोस्ट करना है या लोड ढूँढना है?"
+}

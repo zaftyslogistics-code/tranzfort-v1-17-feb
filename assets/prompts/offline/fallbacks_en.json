@@ -1,0 +1,11 @@
+{
+  "no_internet": "You're offline. Showing cached data. Some features may be limited.",
+  "no_llm": "AI assistant is not available. I can still help with basic commands.",
+  "fallback_response": "I didn't understand that. You can try:\n• \"Post Load\" — to create a new load\n• \"Find Load\" — to search for loads\n• \"My Trips\" — to check your trips\n• \"Navigate\" — to start navigation",
+  "fallback_response_voice": "Sorry, I didn't understand. Try saying post load, find load, or check status.",
+  "queued_action": "Your action has been queued. It will be sent when you're back online.",
+  "cached_data_notice": "Showing saved data. Pull down to refresh when online.",
+  "reconnected": "Back online! Syncing your data...",
+  "sync_complete": "All caught up!",
+  "sync_failed": "Some items couldn't sync. Tap to retry."
+}

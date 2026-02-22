@@ -1,0 +1,5 @@
+{
+  "summary": "आपका लोड:\n📍 {origin} → {destination}\n📦 {material} — {weight} टन\n🚛 {truck_type}\n💰 ₹{price}\n{notes_line}\n\nपोस्ट करें?",
+  "success": "लोड पोस्ट हो गया! ट्रकर जल्द देखेंगे।",
+  "failure": "लोड पोस्ट नहीं हुआ: {error}"
+}

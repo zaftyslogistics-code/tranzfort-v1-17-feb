@@ -1,0 +1,6 @@
+{
+  "found": "Found {count} load{plural} from {origin} to {destination}.",
+  "found_no_filter": "Found {count} load{plural} matching your search.",
+  "none_found": "No loads found for {origin} → {destination}. Try a different route?",
+  "none_found_no_filter": "No loads found. Try different search criteria?"
+}

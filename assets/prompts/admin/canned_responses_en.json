@@ -1,0 +1,12 @@
+{
+  "verification_guide": "To complete verification, please upload clear photos of your Aadhaar card, PAN card, and Driving License (for truckers). Make sure the name on all documents matches your profile name. Photos should be well-lit and readable.",
+  "verification_rejected_photo": "Your verification was rejected because the uploaded photo was unclear. Please re-upload a clear, well-lit photo of your {document_type}.",
+  "verification_rejected_name": "Your verification was rejected because the name on your {document_type} does not match your profile name. Please update your profile or re-upload the correct document.",
+  "verification_rejected_expired": "Your verification was rejected because your {document_type} appears to be expired. Please upload a valid, current document.",
+  "load_not_showing": "If your load is not showing, it may have expired (loads expire after {expiry_hours} hours). Please check your My Loads screen. If the issue persists, try posting a new load.",
+  "cant_book": "To book loads, you must first complete verification. Go to Profile → Verification to upload your documents. Our team reviews documents within 24 hours.",
+  "payment_issue_regular": "For regular loads, payment is arranged directly between you and the supplier. TranZfort does not handle payments for regular loads. Please contact the supplier directly.",
+  "payment_issue_super": "For Super Loads, TranZfort guarantees payment within {payment_term_days} working days after delivery photo upload. If payment is delayed, please contact us with your load ID.",
+  "app_crash": "We're sorry about the crash. To help us fix this, please share: 1) Your phone model, 2) Android version, 3) What you were doing when it crashed. Our dev team will investigate.",
+  "general_help": "How can I help you? Common topics: verification, load posting, booking, payments, app issues. Please describe your issue and I'll assist you."
+}

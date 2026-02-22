@@ -1,0 +1,7 @@
+{
+  "greeting": "Hi! I'm Nancy, your TranZfort helper.",
+  "greeting_with_context": "Hi! I'm Nancy, your TranZfort helper.\nYou have {context}.\n{cta}",
+  "cta_supplier": "Post a load or check your loads. What do you need?",
+  "cta_trucker": "Find loads or check your trips. What do you need?",
+  "cta_default": "Post a load or find loads. What do you need?"
+}

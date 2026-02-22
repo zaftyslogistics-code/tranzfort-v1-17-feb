@@ -1,0 +1,9 @@
+{
+  "domain_context": "Indian truck freight logistics. Users are truckers (drivers/fleet owners) and suppliers (manufacturers/traders who need goods transported). Loads are freight shipments from origin city to destination city.",
+  "key_terms": "POD = Proof of Delivery (delivery photo), LR = Lorry Receipt (transport document), Advance = upfront payment percentage before trip, Super Load = premium admin-managed load with TranZfort payment guarantee, Booking = trucker reserves a load pending supplier approval.",
+  "truck_types": "Open body, Closed body, Container, Trailer, Tanker, Tipper, Flatbed. Axle counts: 2 (mini truck), 4 (medium), 6 (heavy), 10+ (multi-axle trailer).",
+  "materials": "Steel, Coal, Cement, Grain, Sand, Chemicals, FMCG, Electronics, Textiles, Machinery, Fertilizer, Timber, Marble, Cotton.",
+  "pricing": "Rates quoted in ₹ per tonne or ₹ per trip. Advance typically 20-40%. Super Loads guarantee remaining payment within agreed working days after POD.",
+  "load_statuses": "draft, active, pending_approval, booked, in_transit, delivered, completed, cancelled, expired",
+  "geography": "Routes across India. Major corridors: Mumbai-Delhi (NH48), Chennai-Bangalore (NH44), Kolkata-Delhi (NH2), Mumbai-Pune (Expressway). Toll plazas on national highways."
+}

@@ -1,0 +1,7 @@
+{
+  "truck_selection": "Which truck do you want to use for this load?",
+  "truck_selection_single": "Book with your truck {truck_number}?",
+  "truck_selection_retry": "Please select a truck from your fleet. Say the truck number or name.",
+  "confirm_booking": "Book this load?\n\n{origin} → {destination}\n{material} · {weight}T · ₹{price}/T\nTruck: {truck_number}\n\n[Yes, Book] [No, Cancel]",
+  "confirm_booking_voice": "{origin} se {destination}, {material}, {weight} tonne, {price} rupay. {truck_number} se book karein?"
+}

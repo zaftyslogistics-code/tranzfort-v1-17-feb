@@ -1,0 +1,5 @@
+{
+  "summary": "Here's your load:\n📍 {origin} → {destination}\n📦 {material} — {weight} tonnes\n🚛 {truck_type}\n💰 ₹{price}\n{notes_line}\n\nConfirm to post?",
+  "success": "Load posted successfully! Truckers will see it shortly.",
+  "failure": "Failed to post load: {error}"
+}

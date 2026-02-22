@@ -1,0 +1,8 @@
+{
+  "success": "Load booked successfully! The supplier will review your booking.\n\n{origin} → {destination}\nTruck: {truck_number}\nStatus: Waiting for supplier approval",
+  "success_voice": "Load book ho gaya! Supplier approval ka wait karein.",
+  "failure_already_booked": "Sorry, this load has already been booked by another trucker.",
+  "failure_not_verified": "You need to complete verification before booking loads.",
+  "failure_generic": "Booking failed. Please try again.",
+  "super_load_terms": "This is a Super Load.\n💰 Payment: {payment_term_days} working days after delivery photo\n🛡️ Payment guaranteed by TranZfort"
+}

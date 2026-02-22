@@ -1,0 +1,17 @@
+{
+  "greeting": "Namaste! Kya madad kar sakta hun?",
+  "greeting_trucker": "Namaste! Load dhundhna hai ya trip shuru karni hai?",
+  "greeting_supplier": "Namaste! Load post karna hai ya booking check karni hai?",
+  "slot_origin": "Kahan se?",
+  "slot_destination": "Kahan tak?",
+  "slot_material": "Kya maal hai?",
+  "slot_weight": "Kitna weight?",
+  "slot_price": "Rate kya hai?",
+  "confirm_yes": "Ho gaya!",
+  "confirm_no": "Theek hai, cancel.",
+  "fallback": "Samajh nahi aaya. Load post, load dhundho, ya status check bolein.",
+  "listening": "Sun raha hun...",
+  "processing": "Process ho raha hai...",
+  "error_network": "Internet nahi hai. Baad mein try karein.",
+  "error_generic": "Kuch gadbad ho gayi. Phir se try karein."
+}

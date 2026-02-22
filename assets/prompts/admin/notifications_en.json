@@ -1,0 +1,12 @@
+{
+  "verification_approved": "Your account has been verified! You can now {action_text}.",
+  "verification_rejected": "Your verification was not approved. Reason: {reason}. Please re-upload your documents.",
+  "booking_received": "New booking request! {trucker_name} wants to book your load: {origin} → {destination}.",
+  "booking_approved": "Your booking has been approved! Load: {origin} → {destination}. You can start your trip.",
+  "booking_rejected": "Your booking was not approved by the supplier. Load: {origin} → {destination}. You can book other loads.",
+  "load_expired": "Your load has expired: {origin} → {destination}. Post a new load to find truckers.",
+  "trip_completed": "Trip completed! {origin} → {destination}. Rate your experience.",
+  "super_load_assigned": "A trucker has been assigned to your Super Load: {origin} → {destination}. Trucker: {trucker_name}.",
+  "super_load_update": "Super Load update: {origin} → {destination}. Status: {status_label}.",
+  "payment_reminder": "Payment reminder: Super Load {origin} → {destination}. Remaining payment due in {days_remaining} days."
+}

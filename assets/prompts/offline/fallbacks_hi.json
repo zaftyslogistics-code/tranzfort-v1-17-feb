@@ -1,0 +1,11 @@
+{
+  "no_internet": "Aap offline hain. Saved data dikha rahe hain. Kuch features limited ho sakte hain.",
+  "no_llm": "AI assistant available nahi hai. Basic commands mein madad kar sakta hun.",
+  "fallback_response": "Main samajh nahi paya. Ye try karein:\n• \"Load Post\" — naya load banane ke liye\n• \"Load Dhundho\" — loads search karne ke liye\n• \"Meri Trips\" — trips check karne ke liye\n• \"Navigate\" — navigation shuru karne ke liye",
+  "fallback_response_voice": "Samajh nahi aaya. Load post, load dhundho, ya status check bolein.",
+  "queued_action": "Aapka action queue mein hai. Online hone par bhej diya jayega.",
+  "cached_data_notice": "Saved data dikha rahe hain. Online hone par neeche kheenchein refresh ke liye.",
+  "reconnected": "Wapas online! Data sync ho raha hai...",
+  "sync_complete": "Sab update ho gaya!",
+  "sync_failed": "Kuch items sync nahi ho paye. Retry ke liye tap karein."
+}

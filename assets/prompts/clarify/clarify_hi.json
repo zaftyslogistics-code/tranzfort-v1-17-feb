@@ -1,0 +1,11 @@
+{
+  "ambiguous_intent": "Mujhe samajh nahi aaya aap kya karna chahte hain. Kya matlab hai:\n1. Load post karna\n2. Load dhundhna\n3. Trip status check karna\n4. Kuch aur?",
+  "ambiguous_city": "Kya aapka matlab {option1} hai ya {option2}?",
+  "ambiguous_material": "Kya maal hai? (Steel, Coal, Cement, Grain, Sand, Chemicals...)",
+  "ambiguous_weight": "Kitna weight hai tonnes mein? (jaise 25 tonne)",
+  "ambiguous_price": "Rate kya hai? ₹ per tonne ya ₹ per trip mein bataein.",
+  "ambiguous_date": "Kab? Date bataein (jaise kal, 25 March, agle Monday).",
+  "confirm_correction": "Aapne {original} bola. Kya aapka matlab {corrected} hai?",
+  "too_vague": "Thoda aur detail mein bataein. Jaise:\n• \"Mumbai se Delhi load chahiye\"\n• \"25 tonne steel ka load post karo\"\n• \"Meri trip ka status batao\"",
+  "multiple_intents": "Mujhe do cheezein samajh aayi. Ek ek karke karte hain. Pehle kya?\n1. {intent1}\n2. {intent2}"
+}

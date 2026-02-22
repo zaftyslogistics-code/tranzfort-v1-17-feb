@@ -1,0 +1,17 @@
+{
+  "greeting": "Hello! How can I help you today?",
+  "greeting_trucker": "Hello! Ready to find loads or start a trip?",
+  "greeting_supplier": "Hello! Want to post a load or check bookings?",
+  "slot_origin": "Where from?",
+  "slot_destination": "Where to?",
+  "slot_material": "What material?",
+  "slot_weight": "How much weight?",
+  "slot_price": "What rate?",
+  "confirm_yes": "Done!",
+  "confirm_no": "Okay, cancelled.",
+  "fallback": "Sorry, I didn't understand. Try saying post load, find load, or check status.",
+  "listening": "Listening...",
+  "processing": "Processing...",
+  "error_network": "No internet. Try again later.",
+  "error_generic": "Something went wrong. Try again."
+}

@@ -1,0 +1,20 @@
+{
+  "turn_left": "In {distance}, turn left",
+  "turn_right": "In {distance}, turn right",
+  "turn_slight_left": "In {distance}, keep slightly left",
+  "turn_slight_right": "In {distance}, keep slightly right",
+  "turn_sharp_left": "In {distance}, sharp left turn",
+  "turn_sharp_right": "In {distance}, sharp right turn",
+  "continue_straight": "Continue straight for {distance}",
+  "uturn": "Make a U-turn",
+  "roundabout": "At the roundabout, take the {exit} exit",
+  "merge": "Merge onto {road}",
+  "arrived": "You have arrived at your destination",
+  "arrived_left": "Your destination is on the left",
+  "arrived_right": "Your destination is on the right",
+  "recalculating": "Recalculating route",
+  "speed_warning": "Slow down — toll plaza ahead",
+  "rest_stop": "Rest area in {distance}",
+  "fuel_station": "Fuel station in {distance}",
+  "toll_ahead": "Toll plaza in {distance}. Estimated toll: ₹{toll_cost}"
+}

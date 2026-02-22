@@ -1,0 +1,20 @@
+{
+  "origin": "Where should the Super Load be picked up from?",
+  "origin_retry": "Please tell me the pickup city for the Super Load.",
+  "destination": "Where should it be delivered?",
+  "destination_retry": "Please tell me the delivery city.",
+  "material": "What material needs to be transported?",
+  "material_retry": "What type of goods? (Steel, Coal, Cement, Grain...)",
+  "weight": "How much weight? (in tonnes)",
+  "weight_retry": "Please enter weight in tonnes (1-50).",
+  "truck_count": "How many trucks do you need?",
+  "truck_count_retry": "Please enter the number of trucks needed.",
+  "price": "What rate per tonne? (in ₹)",
+  "price_retry": "Please enter rate in ₹ per tonne.",
+  "advance": "What advance percentage will you pay? (in %)",
+  "advance_retry": "Please enter advance percentage (10-100%).",
+  "payment_term": "How many days after POD for remaining payment?\n1. 2 working days\n2. 10 working days\n3. Custom (max 20 days)",
+  "payment_term_retry": "Please select payment terms: 2 days, 10 days, or enter a custom number (max 20).",
+  "pickup_date": "When should pickup start?",
+  "pickup_date_retry": "Please enter pickup date (e.g., tomorrow, 25 March, next Monday)."
+}

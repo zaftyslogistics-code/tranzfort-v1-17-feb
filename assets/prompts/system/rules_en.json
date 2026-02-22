@@ -1,0 +1,7 @@
+{
+  "role_gate_trucker_post": "Truckers can't post loads. Would you like to find loads instead?",
+  "role_gate_supplier_find": "Suppliers don't search for loads. Would you like to post a load?",
+  "reset": "Okay, let's start fresh. What would you like to do?",
+  "retry_limit": "Having trouble understanding. Let's start over.",
+  "cancel": "Cancelled. What would you like to do next?"
+}

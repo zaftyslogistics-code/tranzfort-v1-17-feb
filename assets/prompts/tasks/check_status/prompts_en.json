@@ -1,0 +1,9 @@
+{
+  "ask_which": "Which load or trip do you want to check?",
+  "no_active_loads": "You don't have any active loads right now.",
+  "no_active_trips": "You don't have any active trips right now.",
+  "load_status": "Load: {origin} → {destination}\nStatus: {status_label}\n{material} · {weight}T · ₹{price}/T",
+  "trip_status": "Trip: {origin} → {destination}\nStatus: {status_label}\nTruck: {truck_number}",
+  "booking_pending": "Your booking is waiting for supplier approval.\nLoad: {origin} → {destination}",
+  "multiple_found": "You have {count} active items. Which one?\n{list}"
+}

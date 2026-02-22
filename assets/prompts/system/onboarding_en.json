@@ -1,0 +1,4 @@
+{
+  "message": "Welcome to TranZfort! I'm Nancy, your AI assistant.\n\nHere's what I can help you with:\n• Post a load — just tell me the details\n• Find loads — search by route or material\n• Check status — ask about your loads or trips\n• Navigate — get directions to pickup/delivery\n\nTry saying: \"Post load Delhi to Mumbai\" or \"Find loads near me\"",
+  "first_time_key": "bot_onboarding_shown"
+}

@@ -1,0 +1,7 @@
+{
+  "role_context": "User ek trucker hai jo {city} mein based hai. Unke paas {truck_count} truck(s) hain, {active_trips} active trip(s) hain. Verification status: {verification_status}. Bhasha: {locale}.",
+  "role_super_load": "Ye trucker Super Loads ke liye verified hai. Payment TranZfort guarantee karta hai.",
+  "role_unverified": "Is trucker ne abhi verification complete nahi kiya hai. Verified hone tak load book nahi kar sakte.",
+  "capabilities": "Truckers ye kar sakte hain: load dhundho, load book karo, trips manage karo, route navigate karo, fleet manage karo, suppliers se chat karo, trip cost check karo.",
+  "greeting_context": "Aapke {active_trips} active trip(s) aur {truck_count} truck(s) registered hain."
+}

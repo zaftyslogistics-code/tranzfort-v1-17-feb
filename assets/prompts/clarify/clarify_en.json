@@ -1,0 +1,11 @@
+{
+  "ambiguous_intent": "I'm not sure what you'd like to do. Did you mean:\n1. Post a load\n2. Find loads\n3. Check trip status\n4. Something else?",
+  "ambiguous_city": "Did you mean {option1} or {option2}?",
+  "ambiguous_material": "What type of material? (Steel, Coal, Cement, Grain, Sand, Chemicals...)",
+  "ambiguous_weight": "How much weight in tonnes? (e.g., 25 tonnes)",
+  "ambiguous_price": "What rate? Please specify ₹ per tonne or ₹ per trip.",
+  "ambiguous_date": "When? Please specify a date (e.g., tomorrow, 25 March, next Monday).",
+  "confirm_correction": "You said {original}. Did you mean {corrected}?",
+  "too_vague": "Can you be more specific? For example:\n• \"Mumbai se Delhi load chahiye\"\n• \"25 tonne steel ka load post karo\"\n• \"Meri trip ka status batao\"",
+  "multiple_intents": "I understood multiple things. Let's do one at a time. Which first?\n1. {intent1}\n2. {intent2}"
+}

@@ -1,0 +1,6 @@
+{
+  "found": "{origin} से {destination} तक {count} लोड मिले।",
+  "found_no_filter": "आपकी खोज से {count} लोड मिले।",
+  "none_found": "{origin} → {destination} के लिए कोई लोड नहीं मिला। दूसरा रूट आज़माएं?",
+  "none_found_no_filter": "कोई लोड नहीं मिला। अलग खोज आज़माएं?"
+}

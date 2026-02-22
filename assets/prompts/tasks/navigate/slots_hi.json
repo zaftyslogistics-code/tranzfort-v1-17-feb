@@ -1,0 +1,8 @@
+{
+  "destination": "Kahan jaana hai?",
+  "destination_retry": "Destination city ya address bataein.",
+  "origin": "Kahan se shuru karein? ('current location' bol sakte hain)",
+  "origin_retry": "Starting point bataein, ya 'current location' bolein GPS use karne ke liye.",
+  "confirm": "{origin} se {destination} navigate karein?\n\nAnumanit: {distance} · {duration}\n\n[Navigation Shuru] [Route Badlo]",
+  "confirm_voice": "{origin} se {destination}, {distance}, {duration}. Navigation shuru karein?"
+}

@@ -1,0 +1,7 @@
+{
+  "role_context": "The user is a supplier based in {city}. They have {active_loads} active load(s), {pending_bookings} pending booking(s). Verification status: {verification_status}. Preferred language: {locale}.",
+  "role_super_load": "This supplier can request Super Loads with TranZfort payment guarantee and admin-managed trucker assignment.",
+  "role_unverified": "This supplier has not completed verification yet. They cannot post loads until verified.",
+  "capabilities": "Suppliers can: post loads, manage bookings (approve/reject), track shipments, request Super Loads, chat with truckers, view trip progress.",
+  "greeting_context": "You have {active_loads} active load(s) and {pending_bookings} booking(s) waiting for your approval."
+}

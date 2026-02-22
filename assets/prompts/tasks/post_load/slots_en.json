@@ -1,0 +1,16 @@
+{
+  "origin": "Where is the pickup city?",
+  "origin_retry": "I need the pickup city name. For example: Delhi, Mumbai, Jaipur",
+  "destination": "Where should it be delivered?",
+  "destination_retry": "Please tell me the delivery city. For example: Bangalore, Chennai",
+  "material": "What material are you shipping?",
+  "material_retry": "What type of goods? For example: cement, steel, electronics",
+  "weight": "How much does it weigh (in tonnes)?",
+  "weight_retry": "Please enter weight in tonnes. For example: 10, 25",
+  "truck_type": "What truck type do you need? (open/closed/container/any)",
+  "truck_type_skip": "No preference — any truck type.",
+  "price": "What's your offered price (₹)?",
+  "price_retry": "Please enter the price in rupees. For example: 25000, 50000",
+  "notes": "Any additional notes? (Say 'no' to skip)",
+  "notes_skip": "No additional notes."
+}

@@ -1,0 +1,8 @@
+{
+  "destination": "Where do you want to navigate to?",
+  "destination_retry": "Please tell me the destination city or address.",
+  "origin": "Where are you starting from? (or say 'current location')",
+  "origin_retry": "Please tell me your starting point, or say 'current location' to use GPS.",
+  "confirm": "Navigate from {origin} to {destination}?\n\nEstimated: {distance} · {duration}\n\n[Start Navigation] [Change Route]",
+  "confirm_voice": "{origin} se {destination}, {distance}, {duration}. Navigation shuru karein?"
+}

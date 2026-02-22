@@ -1,0 +1,20 @@
+{
+  "turn_left": "{distance} baad baayein mudein",
+  "turn_right": "{distance} baad daayein mudein",
+  "turn_slight_left": "{distance} baad thoda baayein rahein",
+  "turn_slight_right": "{distance} baad thoda daayein rahein",
+  "turn_sharp_left": "{distance} baad tez baayein mudein",
+  "turn_sharp_right": "{distance} baad tez daayein mudein",
+  "continue_straight": "{distance} seedhe chalein",
+  "uturn": "U-turn lein",
+  "roundabout": "Gol chakkar par {exit} exit lein",
+  "merge": "{road} par merge karein",
+  "arrived": "Aap apni manzil par pahunch gaye hain",
+  "arrived_left": "Aapki manzil baayein taraf hai",
+  "arrived_right": "Aapki manzil daayein taraf hai",
+  "recalculating": "Raasta badal raha hai",
+  "speed_warning": "Speed kam karein — aage toll hai",
+  "rest_stop": "Aage {distance} mein rest area hai",
+  "fuel_station": "Aage {distance} mein petrol pump hai",
+  "toll_ahead": "Aage {distance} mein toll plaza hai. Anumanit toll: ₹{toll_cost}"
+}

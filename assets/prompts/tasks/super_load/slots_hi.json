@@ -1,0 +1,20 @@
+{
+  "origin": "Super Load kahan se pickup hoga?",
+  "origin_retry": "Super Load ke liye pickup city bataein.",
+  "destination": "Kahan deliver karna hai?",
+  "destination_retry": "Delivery city bataein.",
+  "material": "Kya maal transport karna hai?",
+  "material_retry": "Kya maal hai? (Steel, Coal, Cement, Grain...)",
+  "weight": "Kitna weight hai? (Tonnes mein)",
+  "weight_retry": "Weight tonnes mein bataein (1-50).",
+  "truck_count": "Kitne trucks chahiye?",
+  "truck_count_retry": "Trucks ki sankhya bataein.",
+  "price": "Rate kya hai? (₹ per tonne)",
+  "price_retry": "₹ per tonne mein rate bataein.",
+  "advance": "Kitna advance denge? (% mein)",
+  "advance_retry": "Advance percentage bataein (10-100%).",
+  "payment_term": "POD ke baad kitne din mein remaining payment karenge?\n1. 2 working days\n2. 10 working days\n3. Custom (max 20 days)",
+  "payment_term_retry": "Payment terms select karein: 2 din, 10 din, ya custom number (max 20).",
+  "pickup_date": "Pickup kab se shuru?",
+  "pickup_date_retry": "Pickup date bataein (jaise kal, 25 March, agle Monday)."
+}

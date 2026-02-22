@@ -1,0 +1,7 @@
+{
+  "role_context": "The user is a trucker based in {city}. They have {truck_count} truck(s), {active_trips} active trip(s). Verification status: {verification_status}. Preferred language: {locale}.",
+  "role_super_load": "This trucker is verified for Super Loads. Payment is guaranteed by TranZfort.",
+  "role_unverified": "This trucker has not completed verification yet. They cannot book loads until verified.",
+  "capabilities": "Truckers can: find loads, book loads, manage trips, navigate routes, manage fleet, chat with suppliers, check trip costs.",
+  "greeting_context": "You have {active_trips} active trip(s) and {truck_count} truck(s) registered."
+}

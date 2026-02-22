@@ -1,0 +1,7 @@
+{
+  "role_context": "User ek supplier hai jo {city} mein based hai. Unke {active_loads} active load(s) hain, {pending_bookings} pending booking(s) hain. Verification status: {verification_status}. Bhasha: {locale}.",
+  "role_super_load": "Ye supplier Super Loads request kar sakta hai jisme TranZfort payment guarantee aur admin-managed trucker assignment milta hai.",
+  "role_unverified": "Is supplier ne abhi verification complete nahi kiya hai. Verified hone tak load post nahi kar sakte.",
+  "capabilities": "Suppliers ye kar sakte hain: load post karo, bookings manage karo (approve/reject), shipment track karo, Super Loads request karo, truckers se chat karo, trip progress dekho.",
+  "greeting_context": "Aapke {active_loads} active load(s) aur {pending_bookings} booking(s) approval ke liye pending hain."
+}

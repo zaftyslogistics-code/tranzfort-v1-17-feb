@@ -1,0 +1,7 @@
+{
+  "summary": "Ye Super Load request karein?\n\n{origin} → {destination}\n{material} · {weight}T · {truck_count} trucks\n₹{price}/T · {advance}% advance\n💰 Payment: POD ke baad {payment_term_days} working days\nPickup: {pickup_date}\n🛡️ TranZfort payment guarantee\n📋 Commission: 5%\n\n[Haan, Request Karo] [Nahi, Badlo]",
+  "summary_voice": "{origin} se {destination}, {material}, {weight} tonne, {truck_count} trucks, {price} rupay per tonne. {payment_term_days} din mein payment. Super Load request karein?",
+  "success": "Super Load request submit ho gayi! Hamari ops team verified truckers assign karegi.\n\nTruckers assign hone par aapko notification milega.",
+  "success_voice": "Super Load request submit ho gayi! Ops team truckers assign karegi.",
+  "failure": "Super Load request fail ho gayi. Phir se try karein ya support se contact karein."
+}

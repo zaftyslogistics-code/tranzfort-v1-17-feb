@@ -1,0 +1,11 @@
+{
+  "network": "No internet connection. Please check your network and try again.",
+  "auth": "Session expired. Please log in again.",
+  "not_found": "The requested item was not found.",
+  "business_rule": "{message}",
+  "server": "Something went wrong on our end. Please try again later.",
+  "unknown": "An unexpected error occurred. Please try again.",
+  "booking_failed": "Booking failed. The load may already be taken.",
+  "approval_failed": "Approval failed. Please try again.",
+  "load_post_failed": "Failed to post load. Please check your details and try again."
+}

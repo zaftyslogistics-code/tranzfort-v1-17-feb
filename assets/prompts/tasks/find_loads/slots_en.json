@@ -1,0 +1,8 @@
+{
+  "origin": "Which city to pick up from?",
+  "origin_retry": "Tell me the pickup city. For example: Delhi, Ahmedabad",
+  "destination": "Where should it go?",
+  "destination_retry": "Tell me the delivery city.",
+  "truck_type": "What truck type? (open/closed/container/any)",
+  "truck_type_skip": "Searching all truck types."
+}

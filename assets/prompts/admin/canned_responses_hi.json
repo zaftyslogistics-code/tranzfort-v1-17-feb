@@ -1,0 +1,12 @@
+{
+  "verification_guide": "Verification complete karne ke liye, apne Aadhaar card, PAN card, aur Driving License (truckers ke liye) ki clear photos upload karein. Sabhi documents par naam aapke profile naam se match hona chahiye. Photos acchi light mein aur readable honi chahiye.",
+  "verification_rejected_photo": "Aapki verification reject ho gayi kyunki uploaded photo clear nahi thi. Kripya {document_type} ki clear, acchi light wali photo dobara upload karein.",
+  "verification_rejected_name": "Aapki verification reject ho gayi kyunki {document_type} par naam aapke profile naam se match nahi karta. Kripya profile update karein ya sahi document upload karein.",
+  "verification_rejected_expired": "Aapki verification reject ho gayi kyunki aapka {document_type} expired lag raha hai. Kripya valid, current document upload karein.",
+  "load_not_showing": "Agar aapka load nahi dikh raha, toh ho sakta hai expire ho gaya ho (loads {expiry_hours} ghante baad expire hote hain). My Loads screen check karein. Problem bani rahe toh naya load post karein.",
+  "cant_book": "Load book karne ke liye pehle verification complete karein. Profile → Verification par jaayein aur documents upload karein. Hamari team 24 ghante mein review karti hai.",
+  "payment_issue_regular": "Regular loads ke liye payment aap aur supplier ke beech hoti hai. TranZfort regular loads ka payment handle nahi karta. Kripya supplier se seedha contact karein.",
+  "payment_issue_super": "Super Loads ke liye TranZfort delivery photo upload ke baad {payment_term_days} working days mein payment guarantee karta hai. Agar payment late ho, toh apna load ID ke saath humse contact karein.",
+  "app_crash": "Crash ke liye maafi chahte hain. Fix karne mein madad ke liye bataein: 1) Phone model, 2) Android version, 3) Crash ke waqt kya kar rahe the. Hamari dev team investigate karegi.",
+  "general_help": "Kaise madad kar sakte hain? Common topics: verification, load posting, booking, payments, app issues. Apni problem bataein aur hum madad karenge."
+}
