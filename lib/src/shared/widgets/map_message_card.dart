@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import 'route_map_preview.dart';
 
 /// Rich map card displayed in chat when a load has lat/lng coordinates.
 /// Shows origin → destination, distance, cost estimate, and a tap-to-track action.
@@ -150,6 +151,18 @@ class MapMessageCard extends StatelessWidget {
                   _costItem(Icons.account_balance_wallet, _formatRupees(totalCost)),
                 ],
               ),
+            ),
+          ],
+
+          // Task 6.4: Inline mini-map
+          if (originLat != null && originLng != null && destLat != null && destLng != null) ...[
+            const SizedBox(height: 8),
+            RouteMapPreview(
+              originLat: originLat,
+              originLng: originLng,
+              destLat: destLat,
+              destLng: destLng,
+              height: 100,
             ),
           ],
 
