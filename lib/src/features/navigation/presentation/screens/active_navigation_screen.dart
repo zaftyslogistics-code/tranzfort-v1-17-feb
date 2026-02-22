@@ -16,6 +16,7 @@ import '../../models/route_model.dart';
 import '../../providers/active_navigation_state.dart';
 import '../../providers/navigation_providers.dart';
 import '../../services/nearby_pois_service.dart';
+import '../../../../core/utils/map_launcher.dart';
 
 class ActiveNavigationScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -942,6 +943,16 @@ class _ActiveNavigationScreenState
                               Icons.list,
                               AppLocalizations.of(context)!.navSteps,
                               _showStepsList,
+                            ),
+                            _buildControlButton(
+                              Icons.map_outlined,
+                              'Google',
+                              () => MapLauncher.openGoogleMapsRoute(
+                                originLat: widget.originLat,
+                                originLng: widget.originLng,
+                                destLat: widget.destLat,
+                                destLng: widget.destLng,
+                              ),
                             ),
                             _buildControlButton(
                               Icons.close,

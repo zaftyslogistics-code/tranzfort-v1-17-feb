@@ -12,6 +12,7 @@ import '../../models/route_model.dart';
 import '../../providers/navigation_providers.dart';
 import '../../services/routing_service.dart';
 import '../../services/trip_costing_service.dart';
+import '../../../../core/utils/map_launcher.dart';
 
 class RoutePreviewScreen extends ConsumerStatefulWidget {
   final double originLat;
@@ -220,6 +221,18 @@ class _RoutePreviewScreenState extends ConsumerState<RoutePreviewScreen> {
       backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
         title: Text('${widget.originCity} → ${widget.destCity}'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.map_outlined),
+            tooltip: 'Open in Google Maps',
+            onPressed: () => MapLauncher.openGoogleMapsRoute(
+              originLat: widget.originLat,
+              originLng: widget.originLng,
+              destLat: widget.destLat,
+              destLng: widget.destLng,
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? _buildLoadingSkeleton()
