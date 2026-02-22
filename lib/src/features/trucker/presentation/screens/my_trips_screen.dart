@@ -19,6 +19,7 @@ import '../../../../shared/widgets/skeleton_loader.dart';
 import '../../../../shared/widgets/status_chip.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/feedback_prompt.dart';
+import '../../../../shared/widgets/route_map_preview.dart';
 import '../../../../shared/widgets/tts_button.dart';
 
 final _myTripsProvider =
@@ -571,6 +572,29 @@ class _TripCardState extends ConsumerState<_TripCard> {
             style: AppTypography.bodySmall
                 .copyWith(color: AppColors.textSecondary),
           ),
+
+          // Task 6.3: Inline mini-map for active trips
+          Builder(builder: (_) {
+            final oLat = (trip['origin_lat'] as num?)?.toDouble();
+            final oLng = (trip['origin_lng'] as num?)?.toDouble();
+            final dLat = (trip['dest_lat'] as num?)?.toDouble();
+            final dLng = (trip['dest_lng'] as num?)?.toDouble();
+            if (oLat != null && oLng != null && dLat != null && dLng != null &&
+                (status == 'booked' || status == 'in_transit')) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: RouteMapPreview(
+                  originLat: oLat,
+                  originLng: oLng,
+                  destLat: dLat,
+                  destLng: dLng,
+                  height: 100,
+                  onTap: () => context.push('/load-detail/${trip['id']}'),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
           const SizedBox(height: 16),
 
           // Trip stage progress
