@@ -11,7 +11,7 @@ import '../../../../core/utils/dialogs.dart';
 import '../../../../core/utils/haptics.dart';
 import '../../../../core/utils/map_launcher.dart';
 import '../../../../shared/widgets/app_drawer.dart';
-import '../../../../shared/widgets/static_route_map.dart';
+import '../../../../shared/widgets/route_map_preview.dart';
 import '../../../../shared/widgets/profile_card.dart';
 import '../../../../shared/widgets/status_chip.dart';
 import '../../../../shared/widgets/error_retry.dart';
@@ -204,7 +204,7 @@ class LoadDetailScreen extends ConsumerWidget {
                   if (oLat != null && oLng != null && dLat != null && dLng != null) {
                     return Column(
                       children: [
-                        StaticRouteMap(
+                        RouteMapPreview(
                           originLat: oLat,
                           originLng: oLng,
                           destLat: dLat,
