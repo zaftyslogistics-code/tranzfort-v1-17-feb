@@ -19,6 +19,7 @@ import '../../../../shared/widgets/skeleton_loader.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/utils/status_localizer.dart';
 import '../../../../shared/widgets/tts_button.dart';
+import '../../../../shared/widgets/lifecycle_timeline.dart';
 
 final _loadDetailProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>?, String>((ref, loadId) async {
@@ -173,6 +174,22 @@ class LoadDetailScreen extends ConsumerWidget {
                         ),
                       ],
                     ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Task 5.12: Lifecycle timeline
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.cardPadding),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBg,
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                    boxShadow: AppColors.cardShadow,
+                  ),
+                  child: LifecycleTimeline(
+                    currentStatus: status,
+                    role: ref.watch(userRoleProvider).valueOrNull ?? 'supplier',
+                    locale: ref.watch(localeProvider).languageCode,
                   ),
                 ),
                 const SizedBox(height: 16),
