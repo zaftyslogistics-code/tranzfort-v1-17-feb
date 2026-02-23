@@ -111,6 +111,15 @@ class CacheService {
       )
     ''');
 
+    // Task 9.11: Bot conversations (migrated from SharedPreferences)
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS bot_conversations (
+        user_id TEXT PRIMARY KEY,
+        state_json TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
+
     debugPrint('CacheService: tables created');
   }
 

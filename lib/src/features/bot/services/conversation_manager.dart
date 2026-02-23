@@ -1,4 +1,6 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+import 'package:sqflite/sqflite.dart';
+import '../../../core/cache/sqlite_cache.dart';
 import '../models/bot_response.dart';
 import '../models/conversation_state.dart';
 
@@ -7,7 +9,6 @@ import '../models/conversation_state.dart';
 class ConversationManager {
   final Map<String, ConversationState> _conversations = {};
 
-  static const _prefKey = 'bot_conversation_';
   static const int maxHistorySize = 100;
 
   /// Get or create conversation state for a user.
@@ -18,26 +19,45 @@ class ConversationManager {
   /// Check if a conversation exists for a user.
   bool hasConversation(String userId) => _conversations.containsKey(userId);
 
-  /// Restore conversation from SharedPreferences.
+  /// Restore conversation from SQLite.
   Future<void> restore(String userId) async {
     if (_conversations.containsKey(userId)) return;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final json = prefs.getString('$_prefKey$userId');
-      if (json != null && json.isNotEmpty) {
-        _conversations[userId] = ConversationState.deserialize(json);
+      final rows = await CacheService.db.query(
+        'bot_conversations',
+        where: 'user_id = ?',
+        whereArgs: [userId],
+        limit: 1,
+      );
+      if (rows.isNotEmpty) {
+        final json = rows.first['state_json'] as String;
+        if (json.isNotEmpty) {
+          _conversations[userId] = ConversationState.deserialize(json);
+          debugPrint('ConversationManager: restored conversation for $userId');
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ConversationManager: restore failed: $e');
+    }
   }
 
-  /// Save conversation to SharedPreferences.
+  /// Save conversation to SQLite.
   Future<void> save(String userId) async {
     final state = _conversations[userId];
     if (state == null) return;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('$_prefKey$userId', state.serialize());
-    } catch (_) {}
+      await CacheService.db.insert(
+        'bot_conversations',
+        {
+          'user_id': userId,
+          'state_json': state.serialize(),
+          'updated_at': DateTime.now().millisecondsSinceEpoch,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      debugPrint('ConversationManager: save failed: $e');
+    }
   }
 
   /// Get conversation history for UI restore.
@@ -76,9 +96,13 @@ class ConversationManager {
   /// Reset conversation for a user (clear state + persisted data).
   void reset(String userId) {
     _conversations.remove(userId);
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.remove('$_prefKey$userId');
-    });
+    try {
+      CacheService.db.delete(
+        'bot_conversations',
+        where: 'user_id = ?',
+        whereArgs: [userId],
+      );
+    } catch (_) {}
   }
 
   /// Reset all conversations.
