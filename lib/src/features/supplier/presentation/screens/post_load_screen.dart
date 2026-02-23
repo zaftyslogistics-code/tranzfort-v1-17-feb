@@ -66,6 +66,9 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
   final _otherMaterialController = TextEditingController();
   final _notesController = TextEditingController();
 
+  // Task 7.9: Bulk load groups
+  int? _trucksNeeded;
+
   @override
   void initState() {
     super.initState();
@@ -227,6 +230,8 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
       if (_destAddress != null) 'dest_address': _destAddress,
       if (_routeDistanceKm != null) 'route_distance_km': _routeDistanceKm,
       if (_routeDurationMin != null) 'route_duration_min': _routeDurationMin,
+      // Task 7.9: Bulk load groups
+      if (_trucksNeeded != null && _trucksNeeded! > 1) 'trucks_needed': _trucksNeeded,
     };
   }
 
@@ -861,6 +866,46 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
                           .copyWith(color: AppColors.info),
                     ),
                   ),
+                  // Task 7.9: Bulk load groups — trucks needed
+                  const SizedBox(height: 16),
+                  Text('Trucks Needed', style: AppTypography.bodyMedium),
+                  const SizedBox(height: 4),
+                  Text('Need multiple trucks? Set the count for a bulk load group.',
+                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      _trucksChip(null, '1 (default)'),
+                      _trucksChip(5, '5'),
+                      _trucksChip(10, '10'),
+                      _trucksChip(25, '25'),
+                    ],
+                  ),
+                  if (_trucksNeeded != null && _trucksNeeded! > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandTealLight,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.local_shipping, size: 16, color: AppColors.brandTeal),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Bulk Load: $_trucksNeeded trucks needed',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.brandTeal,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -942,6 +987,20 @@ class _PostLoadScreenState extends ConsumerState<PostLoadScreen> {
           ),
           Expanded(child: Text(value, style: AppTypography.bodyMedium)),
         ],
+      ),
+    );
+  }
+
+  Widget _trucksChip(int? count, String label) {
+    final selected = _trucksNeeded == count;
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => setState(() => _trucksNeeded = count),
+      selectedColor: AppColors.brandTeal,
+      labelStyle: TextStyle(
+        color: selected ? Colors.white : AppColors.textPrimary,
+        fontSize: 13,
       ),
     );
   }

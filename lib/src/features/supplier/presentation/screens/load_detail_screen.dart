@@ -290,6 +290,69 @@ class LoadDetailScreen extends ConsumerWidget {
                     (load['notes'] as String?)?.isNotEmpty == true)
                   const SizedBox(height: 16),
 
+                // Task 7.3: Super Load payment terms
+                if (load['is_super_load'] == true) ...[
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.cardPadding),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandOrangeLight,
+                      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                      border: Border.all(color: AppColors.brandOrange),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.star, size: 18, color: AppColors.brandOrange),
+                            const SizedBox(width: 6),
+                            Text('Super Load', style: AppTypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w700, color: AppColors.brandOrange)),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.brandOrange,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text('TranZfort Guarantee',
+                                  style: AppTypography.caption.copyWith(
+                                    color: Colors.white, fontWeight: FontWeight.w600, fontSize: 10)),
+                            ),
+                          ],
+                        ),
+                        if (load['payment_term_days'] != null) ...[
+                          const SizedBox(height: 8),
+                          _detailRow(context, 'Payment',
+                              '${load['payment_term_days']} working days after POD'),
+                        ],
+                        if (load['advance_percentage'] != null) ...[
+                          const SizedBox(height: 4),
+                          Builder(builder: (_) {
+                            final price = (load['price'] as num?)?.toDouble() ?? 0;
+                            final weight = (load['weight_tonnes'] as num?)?.toDouble() ?? 0;
+                            final adv = (load['advance_percentage'] as num?)?.toInt() ?? 0;
+                            final total = price * weight;
+                            final advAmt = (total * adv / 100).round();
+                            final remaining = (total - advAmt).round();
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _detailRow(context, 'Advance',
+                                    '$adv% (\u20b9$advAmt on loading)'),
+                                const SizedBox(height: 4),
+                                _detailRow(context, 'Remaining',
+                                    '\u20b9$remaining after delivery'),
+                              ],
+                            );
+                          }),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 // Phase 4C: Supplier profile card (for truckers viewing load)
                 Builder(builder: (_) {
                   String supplierName = load['supplier_name'] as String? ?? '';
@@ -664,6 +727,24 @@ class _LoadDetailActionsState extends ConsumerState<_LoadDetailActions> {
   }
 
   Future<void> _bookWithTruck(String truckerId, String truckId) async {
+    // Task 7.5: Super Load payment terms confirmation
+    if (widget.load['is_super_load'] == true) {
+      final termDays = widget.load['payment_term_days'] as int? ?? 10;
+      final adv = (widget.load['advance_percentage'] as num?)?.toInt() ?? 0;
+      final confirmed = await AppDialogs.confirm(
+        context,
+        title: 'Super Load Booking',
+        description:
+            'This is a Super Load with TranZfort payment guarantee.\n\n'
+            '• Advance: $adv% paid on loading\n'
+            '• Remaining: ${100 - adv}% within $termDays working days after POD\n'
+            '• Payment guaranteed by TranZfort\n\n'
+            'Do you want to proceed?',
+        confirmText: 'Book Super Load',
+      );
+      if (!confirmed || !mounted) return;
+    }
+
     setState(() => _isBooking = true);
     try {
       await ref.read(databaseServiceProvider).bookLoad(
@@ -675,7 +756,9 @@ class _LoadDetailActionsState extends ConsumerState<_LoadDetailActions> {
         AppHaptics.onPrimaryAction();
         AppDialogs.showSuccessSnackBar(
           context,
-          'Booking request sent! Supplier will approve.',
+          widget.load['is_super_load'] == true
+              ? 'Super Load booked! Payment guaranteed by TranZfort.'
+              : 'Booking request sent! Supplier will approve.',
         );
         ref.invalidate(_loadDetailProvider(widget.loadId));
       }

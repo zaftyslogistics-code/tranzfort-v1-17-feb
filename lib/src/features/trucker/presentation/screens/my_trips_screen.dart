@@ -573,6 +573,52 @@ class _TripCardState extends ConsumerState<_TripCard> {
                 .copyWith(color: AppColors.textSecondary),
           ),
 
+          // Task 7.4: Super Load payment breakdown
+          if (trip['is_super_load'] == true) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.brandOrangeLight,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.shield, size: 14, color: AppColors.brandOrange),
+                      const SizedBox(width: 4),
+                      Text('TranZfort Guarantee',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.brandOrange,
+                            fontWeight: FontWeight.w700,
+                          )),
+                    ],
+                  ),
+                  Builder(builder: (_) {
+                    final price = (trip['price'] as num?)?.toDouble() ?? 0;
+                    final weight = (trip['weight_tonnes'] as num?)?.toDouble() ?? 0;
+                    final adv = (trip['advance_percentage'] as num?)?.toInt() ?? 0;
+                    final termDays = trip['payment_term_days'] as int? ?? 10;
+                    final total = price * weight;
+                    final advAmt = (total * adv / 100).round();
+                    final remaining = (total - advAmt).round();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Advance: $adv% (\u20b9$advAmt) \u2022 Remaining: \u20b9$remaining \u2022 $termDays days after POD',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textSecondary, fontSize: 10),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+
           // Task 6.3: Inline mini-map for active trips
           Builder(builder: (_) {
             final oLat = (trip['origin_lat'] as num?)?.toDouble();

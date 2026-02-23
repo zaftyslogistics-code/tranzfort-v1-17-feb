@@ -732,11 +732,12 @@ class DatabaseService {
 
   // ─── SUPER LOADS ───
 
-  Future<void> requestSuperLoad(String loadId) async {
+  Future<void> requestSuperLoad(String loadId, {int paymentTermDays = 10}) async {
     final currentUserId = _supabase.auth.currentUser?.id;
     await _supabase.from('loads').update({
       'is_super_load': true,
       'super_status': 'requested',
+      'payment_term_days': paymentTermDays,
     }).eq('id', loadId);
 
     if (currentUserId != null) {
@@ -745,6 +746,7 @@ class DatabaseService {
           'load_id': loadId,
           'supplier_id': currentUserId,
           'status': 'requested',
+          'payment_term_days': paymentTermDays,
         },
         onConflict: 'load_id',
       );

@@ -1126,6 +1126,43 @@ class _LoadCard extends ConsumerWidget {
             }
             return const SizedBox.shrink();
           }),
+          // Task 7.3: Super Load payment terms
+          if (load['is_super_load'] == true) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.brandOrangeLight,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.shield, size: 12, color: AppColors.brandOrange),
+                  const SizedBox(width: 4),
+                  Text(
+                    'TranZfort Guarantee',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.brandOrange,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10,
+                    ),
+                  ),
+                  if (load['payment_term_days'] != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      '${load['payment_term_days']}d payment',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.brandOrange,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
           // LC-1 to LC-4: Truck type, tyres, pickup date, price type
           const SizedBox(height: 6),
           Wrap(

@@ -211,6 +211,49 @@ class _LoadCard extends ConsumerWidget {
             style:
                 AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
           ),
+          // Task 7.9: Bulk load group fulfillment tracking
+          if ((load['trucks_needed'] as int?) != null && (load['trucks_needed'] as int) > 1) ...[
+            const SizedBox(height: 8),
+            Builder(builder: (_) {
+              final needed = load['trucks_needed'] as int;
+              final booked = (load['trucks_booked'] as int?) ?? 0;
+              final progress = booked / needed;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.local_shipping, size: 14, color: AppColors.brandTeal),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$booked/$needed trucks booked',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.brandTeal,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (booked >= needed) ...[
+                        const SizedBox(width: 6),
+                        const Icon(Icons.check_circle, size: 14, color: AppColors.success),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress.clamp(0.0, 1.0),
+                      backgroundColor: AppColors.brandTealLight,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        booked >= needed ? AppColors.success : AppColors.brandTeal,
+                      ),
+                      minHeight: 6,
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ],
           const SizedBox(height: 8),
           Row(
             children: [

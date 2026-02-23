@@ -51,6 +51,9 @@ class LoadModel {
   final String? postedByAdminId;
   final String? assignedOpsAdminId;
   final bool isVerifiedSupplier;
+  // Bulk load group fields
+  final int? trucksNeeded;
+  final int trucksBooked;
 
   const LoadModel({
     this.id,
@@ -100,6 +103,8 @@ class LoadModel {
     this.postedByAdminId,
     this.assignedOpsAdminId,
     this.isVerifiedSupplier = false,
+    this.trucksNeeded,
+    this.trucksBooked = 0,
   });
 
   /// Backward-compat getter — returns the DB string value.
@@ -168,6 +173,8 @@ class LoadModel {
       postedByAdminId: json['posted_by_admin_id'] as String?,
       assignedOpsAdminId: json['assigned_ops_admin_id'] as String?,
       isVerifiedSupplier: json['is_verified_supplier'] as bool? ?? false,
+      trucksNeeded: json['trucks_needed'] as int?,
+      trucksBooked: json['trucks_booked'] as int? ?? 0,
     );
   }
 
@@ -200,6 +207,8 @@ class LoadModel {
       if (routeDistanceKm != null) 'route_distance_km': routeDistanceKm,
       if (paymentTermDays != null) 'payment_term_days': paymentTermDays,
       if (notes != null) 'notes': notes,
+      if (trucksNeeded != null) 'trucks_needed': trucksNeeded,
+      'trucks_booked': trucksBooked,
     };
   }
 
@@ -257,6 +266,8 @@ class LoadModel {
     String? postedByAdminId,
     String? assignedOpsAdminId,
     bool? isVerifiedSupplier,
+    int? trucksNeeded,
+    int? trucksBooked,
   }) {
     return LoadModel(
       id: id ?? this.id,
@@ -306,6 +317,8 @@ class LoadModel {
       postedByAdminId: postedByAdminId ?? this.postedByAdminId,
       assignedOpsAdminId: assignedOpsAdminId ?? this.assignedOpsAdminId,
       isVerifiedSupplier: isVerifiedSupplier ?? this.isVerifiedSupplier,
+      trucksNeeded: trucksNeeded ?? this.trucksNeeded,
+      trucksBooked: trucksBooked ?? this.trucksBooked,
     );
   }
 
