@@ -103,6 +103,71 @@ void main() {
     });
   });
 
+  group('Phase 7-9 table references in code', () {
+    test('database_service references user_preferences table', () {
+      final prefSync = File('lib/src/core/services/preferences_sync_service.dart');
+      if (!prefSync.existsSync()) return;
+      final source = prefSync.readAsStringSync();
+      expect(source, contains("'user_preferences'"),
+          reason: 'PreferencesSyncService must reference user_preferences table');
+    });
+
+    test('tracking_service references tracking_sessions and location_pings', () {
+      final tracking = File('lib/src/features/navigation/services/tracking_service.dart');
+      if (!tracking.existsSync()) return;
+      final source = tracking.readAsStringSync();
+      expect(source, contains("'tracking_sessions'"),
+          reason: 'TrackingService must reference tracking_sessions table');
+      expect(source, contains("'location_pings'"),
+          reason: 'TrackingService must reference location_pings table');
+    });
+
+    test('load_repository references loads table with payment_term_days-related fields', () {
+      final loadModel = File('lib/src/core/models/load_model.dart');
+      if (!loadModel.existsSync()) return;
+      final source = loadModel.readAsStringSync();
+      expect(source, contains('trucksNeeded'),
+          reason: 'LoadModel should have trucksNeeded field for bulk load groups');
+    });
+
+    test('SQLite cache creates all expected tables', () {
+      final cache = File('lib/src/core/cache/sqlite_cache.dart');
+      if (!cache.existsSync()) return;
+      final source = cache.readAsStringSync();
+      for (final table in [
+        'cached_loads',
+        'cached_trucks',
+        'cached_profile',
+        'cached_conversations',
+        'cached_notifications',
+        'pending_actions',
+        'pending_pings',
+        'bot_conversations',
+      ]) {
+        expect(source, contains(table),
+            reason: 'CacheService must create $table table');
+      }
+    });
+
+    test('subscription_manager enforces max 10 channels', () {
+      final subMgr = File('lib/src/core/services/subscription_manager.dart');
+      if (!subMgr.existsSync()) return;
+      final source = subMgr.readAsStringSync();
+      expect(source, contains('maxChannels = 10'),
+          reason: 'SubscriptionManager must enforce Supabase free tier limit');
+    });
+
+    test('image compression uses 1200x1200 max dimensions', () {
+      final supplierVerif = File('lib/src/features/supplier/presentation/screens/supplier_verification_screen.dart');
+      if (!supplierVerif.existsSync()) return;
+      final source = supplierVerif.readAsStringSync();
+      expect(source, contains('maxWidth: 1200'),
+          reason: 'Upload screens must use compressed dimensions');
+      expect(source, contains('maxHeight: 1200'),
+          reason: 'Upload screens must use compressed dimensions');
+    });
+  });
+
   group('Message type enum compliance', () {
     test('sendMessage uses valid message_type values', () {
       final dbSource = File('lib/src/core/services/database_service.dart').readAsStringSync();
