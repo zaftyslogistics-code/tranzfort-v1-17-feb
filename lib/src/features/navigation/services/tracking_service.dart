@@ -4,6 +4,7 @@ import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/cache/sqlite_cache.dart';
 
 /// Lightweight state exposed to the persistent tracking banner.
 class TrackingState {
@@ -29,7 +30,7 @@ class TrackingService {
   final Battery _battery = Battery();
   StreamSubscription<Position>? _positionSub;
   Timer? _batchTimer;
-  final List<Map<String, dynamic>> _pendingPings = [];
+  // Task 9.5: Pings now stored in SQLite pending_pings table (not RAM)
   String? _activeSessionId;
   String? _activeTruckerId;
 
@@ -157,26 +158,24 @@ class TrackingService {
 
       // Read battery info
       int? batteryLevel;
-      bool? isCharging;
       try {
         batteryLevel = await _battery.batteryLevel;
-        final batteryState = await _battery.batteryState;
-        isCharging = batteryState == BatteryState.charging ||
-            batteryState == BatteryState.full;
       } catch (_) {}
 
-      _pendingPings.add({
-        'session_id': _activeSessionId,
-        'trucker_id': truckerId,
-        'lat': position.latitude,
-        'lng': position.longitude,
-        'speed_kmh': speedKmh,
-        'heading': position.heading,
-        'accuracy_m': position.accuracy,
-        if (batteryLevel != null) 'battery_level': batteryLevel,
-        if (isCharging != null) 'is_charging': isCharging,
-        'recorded_at': DateTime.now().toUtc().toIso8601String(),
-      });
+      // Task 9.5: Store ping in SQLite instead of in-memory list
+      try {
+        await CacheService.db.insert('pending_pings', {
+          'session_id': _activeSessionId,
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'heading': position.heading,
+          'speed': speedKmh,
+          'battery_level': batteryLevel,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        });
+      } catch (e) {
+        debugPrint('TrackingService: failed to store ping in SQLite: $e');
+      }
 
       // Update banner state with speed
       state.value = TrackingState(
@@ -190,15 +189,48 @@ class TrackingService {
   }
 
   Future<void> _flushPings() async {
-    if (_pendingPings.isEmpty) return;
-    final batch = List<Map<String, dynamic>>.from(_pendingPings);
-    _pendingPings.clear();
+    if (_activeSessionId == null) return;
 
     try {
+      final db = CacheService.db;
+      final rows = await db.query(
+        'pending_pings',
+        where: 'session_id = ?',
+        whereArgs: [_activeSessionId],
+        orderBy: 'timestamp ASC',
+        limit: 100,
+      );
+
+      if (rows.isEmpty) return;
+
+      // Convert SQLite rows to Supabase insert format
+      final batch = rows.map((r) => {
+        'session_id': r['session_id'],
+        'trucker_id': _activeTruckerId,
+        'lat': r['latitude'],
+        'lng': r['longitude'],
+        'speed_kmh': r['speed'],
+        'heading': r['heading'],
+        'battery_level': r['battery_level'],
+        'recorded_at': DateTime.fromMillisecondsSinceEpoch(
+          r['timestamp'] as int,
+        ).toUtc().toIso8601String(),
+      }).toList();
+
       await _supabase.from('location_pings').insert(batch);
-    } catch (_) {
-      // Re-queue on failure (offline resilience)
-      _pendingPings.insertAll(0, batch);
+
+      // Delete flushed rows from SQLite
+      final ids = rows.map((r) => r['id']).toList();
+      await db.delete(
+        'pending_pings',
+        where: 'id IN (${ids.map((_) => '?').join(',')})',
+        whereArgs: ids,
+      );
+
+      debugPrint('TrackingService: flushed ${rows.length} pings');
+    } catch (e) {
+      debugPrint('TrackingService: flush failed (offline?): $e');
+      // Pings remain in SQLite for next flush attempt
     }
   }
 
@@ -217,7 +249,7 @@ class TrackingService {
       }).eq('id', _activeSessionId!);
     } catch (_) {}
 
-    _cleanup();
+    await _cleanup();
   }
 
   /// Cancel the active tracking session.
@@ -231,15 +263,24 @@ class TrackingService {
       }).eq('id', _activeSessionId!);
     } catch (_) {}
 
-    _cleanup();
+    await _cleanup();
   }
 
-  void _cleanup() {
+  Future<void> _cleanup() async {
     _positionSub?.cancel();
     _positionSub = null;
     _batchTimer?.cancel();
     _batchTimer = null;
-    _pendingPings.clear();
+    // Clear pending pings from SQLite for this session
+    if (_activeSessionId != null) {
+      try {
+        await CacheService.db.delete(
+          'pending_pings',
+          where: 'session_id = ?',
+          whereArgs: [_activeSessionId],
+        );
+      } catch (_) {}
+    }
     _activeSessionId = null;
     _activeTruckerId = null;
     _lastMovedAt = null;

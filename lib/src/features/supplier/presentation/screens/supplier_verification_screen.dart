@@ -96,8 +96,8 @@ class _SupplierVerificationScreenState
       final picker = ImagePicker();
       final picked = await picker.pickImage(
         source: source,
-        maxWidth: 1920,
-        maxHeight: 1080,
+        maxWidth: 1200,
+        maxHeight: 1200,
         imageQuality: 85,
         preferredCameraDevice: CameraDevice.rear,
       );

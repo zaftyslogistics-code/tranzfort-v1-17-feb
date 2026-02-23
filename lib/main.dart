@@ -11,6 +11,8 @@ import 'src/features/navigation/presentation/widgets/navigation_banner.dart';
 import 'src/shared/widgets/ban_check_wrapper.dart';
 import 'src/shared/widgets/connectivity_banner.dart';
 import 'src/shared/widgets/error_boundary.dart';
+import 'src/core/services/subscription_manager.dart';
+import 'src/core/cache/sqlite_cache.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
@@ -33,6 +35,12 @@ void main() async {
     url: SupabaseConfig.supabaseUrl,
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
+
+  // Task 9.1: Initialize SQLite cache layer
+  await CacheService.init();
+
+  // Task 9.12: Initialize managed Realtime subscription lifecycle
+  SubscriptionManager().init();
 
   runApp(const ProviderScope(child: TranZfortApp()));
 }

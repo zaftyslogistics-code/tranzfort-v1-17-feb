@@ -52,6 +52,10 @@ dependencies:
   # Permissions
   permission_handler: ^11.3.1
 
+  # SQLite Cache (Phase 9)
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+
   # Utilities
   share_plus: ^10.0.0
   url_launcher: ^6.3.0
